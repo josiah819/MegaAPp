@@ -1,0 +1,41 @@
+# WoodsOS — Muskoka Woods operations platform
+
+> WoodsOS runs every part of camp in one place: bookings & leads, billing,
+> catering, accommodation & housekeeping, facilities tickets with two-way guest
+> chat, tasks & seasonal checklists, gear checkout, budgets & expenses, safety
+> incidents, lost & found, sign-out, shopping & town runs, people & growth
+> (kudos, pulse, 1:1s, goals, feedback, certifications), smart screens, a 3D
+> property map, and per-area metrics. Access is governed by a three-layer
+> permission system (module switches → role matrix → per-person overrides).
+
+WoodsOS is AI-native. The supported way for an AI agent to use it is the
+built-in MCP server — no API keys or credits, just a staff member's personal
+access token.
+
+## Connect (MCP)
+
+- Endpoint: POST /api/mcp (streamable HTTP, stateless JSON-RPC 2.0)
+- Auth: `Authorization: Bearer wos_pat_…` — staff mint tokens in the app under
+  **Claude & AI** (requires the `ai.use` permission)
+- Claude Code: `claude mcp add --transport http woodsos <origin>/api/mcp --header "Authorization: Bearer <token>"`
+- Tools mirror the token holder's live permissions: `tools/list` only returns
+  what they may do, write tools additionally require `ai.write`, and every
+  write is audited under their name.
+- Start with the `whoami` tool, then `daily_brief` for today's picture.
+  `export_dataset` pulls whole datasets (JSON/CSV); `get_metrics` summarizes
+  any area the holder can see.
+
+## Humans
+
+- App: / (sign in) · installable PWA
+- Guest report form: /report/<token> (QR posters in every building)
+- Guest ticket tracking + chat: /track/<token>
+- Lobby screens: /screen/<token> · Lodging board: /board/<token>
+- Bookings iCal feed: /api/public/ical/<token>
+
+## Notes for agents
+
+- Rate limits apply (HTTP 429 + Retry-After). Be gentle.
+- IDs: tickets use MW- codes, incidents INC-, bookings BK- — tools accept either
+  the code or the numeric id.
+- Dates are camp-local (America/Toronto), ISO formatted.

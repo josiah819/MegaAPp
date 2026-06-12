@@ -1,0 +1,67 @@
+name: woodsos
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-woodsos}
+      POSTGRES_USER: ${POSTGRES_USER:-woodsos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-please}
+    command: postgres -c shared_buffers=64MB -c max_connections=40
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [internal]
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-woodsos}:${POSTGRES_PASSWORD:-change-me-please}@db:5432/${POSTGRES_DB:-woodsos}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      PORT: "4000"
+      TZ: ${TZ:-America/Toronto}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@muskokawoods.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-WoodsOS!demo}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks: [internal]
+
+  # Public web service — nginx serves the SPA and reverse-proxies /api to backend.
+  # Joins `internal` (to reach backend/db) and the shared `web` network (for the
+  # Caddy proxy). No host ports — the proxy reaches it over the Docker network.
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [internal, web]
+    labels:
+      caddy: woodsos.10.0.12.189.nip.io
+      caddy.reverse_proxy: "{{upstreams 80}}"
+
+volumes:
+  dbdata:
+  uploads:
+
+networks:
+  internal:
+  web:
+    external: true

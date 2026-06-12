@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muskoka Woods · Virtual Property Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,600;12..96,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#13293d; --navy-2:#1d3c57; --cream:#f7f0e0; --paper:#fbf6ea; --ink:#22303a;
+    --pine:#2f6b4f; --pine-2:#5d8a66; --lake:#2b7ea1; --ember:#e4572e; --sand:#e7cf9f;
+    --line:rgba(34,48,58,.14); --shadow:0 18px 50px rgba(13,30,45,.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden}
+  body{font-family:"Bricolage Grotesque",sans-serif;background:#0d1f30;color:var(--ink);-webkit-font-smoothing:antialiased}
+  #scene{position:fixed;inset:0;display:block;cursor:grab}
+  #scene.dragging{cursor:grabbing}
+  #scene.pointing{cursor:pointer}
+
+  #loader{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+    background:radial-gradient(120% 90% at 50% 110%, #1d4258 0%, transparent 60%),linear-gradient(180deg,#0c1c2c 0%, #13293d 100%);
+    color:var(--cream);transition:opacity .8s ease, visibility .8s}
+  #loader.done{opacity:0;visibility:hidden}
+  .loader-pines{display:flex;align-items:flex-end;gap:10px;height:74px}
+  .loader-pines .p1{animation:sway 2.6s ease-in-out infinite}
+  .loader-pines .p2{animation:sway 2.6s ease-in-out .4s infinite}
+  .loader-pines .p3{animation:sway 2.6s ease-in-out .8s infinite}
+  @keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+  #loader h1{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(26px,4.2vw,44px);letter-spacing:.02em;text-align:center;line-height:1.1}
+  #loader h1 em{font-style:italic;font-weight:400;color:var(--sand)}
+  #loader .sub{font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:rgba(247,240,224,.55)}
+  .loader-bar{width:min(280px,60vw);height:3px;background:rgba(247,240,224,.15);border-radius:99px;overflow:hidden}
+  .loader-bar i{display:block;height:100%;width:40%;border-radius:99px;background:var(--ember);animation:scan 1.2s ease-in-out infinite alternate}
+  @keyframes scan{from{transform:translateX(-60%)}to{transform:translateX(220%)}}
+
+  #masthead{position:fixed;top:20px;left:22px;z-index:20;pointer-events:none;color:var(--cream);text-shadow:0 2px 18px rgba(10,25,40,.5);animation:drop .9s cubic-bezier(.2,.8,.2,1) .2s both}
+  @keyframes drop{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+  #masthead .kicker{display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:rgba(247,240,224,.75)}
+  #masthead .kicker::before{content:"";width:26px;height:2px;background:var(--ember)}
+  #masthead h1{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(28px,3.6vw,42px);letter-spacing:.01em;margin-top:4px}
+  #masthead .tag{font-size:13px;font-weight:300;color:rgba(247,240,224,.8);margin-top:2px}
+  #masthead .tag b{font-weight:600;color:var(--sand)}
+
+  #legend{position:fixed;top:20px;right:20px;bottom:20px;z-index:20;width:288px;display:flex;flex-direction:column;
+    background:linear-gradient(160deg,var(--paper),var(--cream));border-radius:16px;box-shadow:var(--shadow);overflow:hidden;
+    animation:slide .9s cubic-bezier(.2,.8,.2,1) .35s both}
+  @keyframes slide{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+  #legend header{padding:16px 18px 12px;border-bottom:2px dashed var(--line)}
+  #legend header .small{font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--ember);font-weight:700}
+  #legend header h2{font-family:"Fraunces",serif;font-weight:900;font-size:21px;color:var(--navy);margin-top:2px}
+  #legend header p{font-size:11.5px;font-weight:300;color:#5b6b76;margin-top:3px;line-height:1.45}
+  #legend .scroll{flex:1;overflow-y:auto;padding:8px 10px 14px;scrollbar-width:thin;scrollbar-color:#c9bda1 transparent}
+  .group{margin-top:10px}
+  .group > .gtitle{display:flex;align-items:center;gap:8px;padding:0 8px 6px;font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#7a8893}
+  .group > .gtitle::after{content:"";flex:1;height:1px;background:var(--line)}
+  .loc{display:flex;align-items:center;gap:10px;width:100%;padding:6px 8px;border:0;border-radius:9px;background:transparent;
+    font-family:inherit;font-size:13px;font-weight:600;color:var(--ink);text-align:left;cursor:pointer;transition:background .15s, transform .15s}
+  .loc:hover{background:rgba(19,41,61,.07);transform:translateX(2px)}
+  .loc.active{background:var(--navy);color:var(--cream)}
+  .loc.active small{color:rgba(247,240,224,.6)}
+  .loc .dot{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 0 3px rgba(0,0,0,.05)}
+  .loc small{display:block;font-size:10.5px;font-weight:400;color:#74828d;line-height:1.2;margin-top:1px}
+  .loc .txt{flex:1;min-width:0}
+  #legend footer{padding:10px 16px;border-top:2px dashed var(--line);font-size:10.5px;color:#7a8893;display:flex;justify-content:space-between;align-items:center}
+  #legend footer b{color:var(--navy)}
+  #toggleLegend{display:none}
+
+  #card{position:fixed;left:22px;bottom:22px;z-index:21;width:min(360px,calc(100vw - 44px));
+    background:linear-gradient(165deg,var(--paper),var(--cream));border-radius:16px;box-shadow:var(--shadow);padding:18px 20px 16px;
+    transform:translateY(140%);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.25,1), opacity .4s}
+  #card.show{transform:none;opacity:1}
+  #card .cat{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:#fff;padding:4px 10px;border-radius:99px}
+  #card h3{font-family:"Fraunces",serif;font-weight:900;font-size:24px;color:var(--navy);margin:9px 0 5px;line-height:1.05}
+  #card p{font-size:13px;font-weight:300;line-height:1.55;color:#475663}
+  #card .stat{margin-top:11px;padding-top:10px;border-top:2px dashed var(--line);font-size:12px;color:var(--navy);display:flex;gap:8px;align-items:baseline}
+  #card .stat b{font-family:"Fraunces",serif;font-size:17px;color:var(--ember)}
+  #card .close{position:absolute;top:10px;right:12px;border:0;background:transparent;cursor:pointer;font-size:17px;color:#8a97a1;line-height:1;padding:4px}
+  #card .close:hover{color:var(--ember)}
+
+  #tip{position:fixed;z-index:22;pointer-events:none;opacity:0;transform:translate(-50%,calc(-100% - 14px));
+    background:var(--navy);color:var(--cream);font-size:12.5px;font-weight:600;letter-spacing:.02em;padding:6px 12px;border-radius:99px;white-space:nowrap;
+    box-shadow:0 8px 24px rgba(10,25,40,.4);transition:opacity .12s}
+  #tip::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--navy)}
+  #tip.show{opacity:1}
+
+  #hint{position:fixed;left:22px;bottom:22px;z-index:19;color:rgba(247,240,224,.78);font-size:12px;font-weight:300;letter-spacing:.04em;
+    display:flex;gap:14px;align-items:center;text-shadow:0 1px 10px rgba(10,25,40,.6);animation:drop .9s cubic-bezier(.2,.8,.2,1) .55s both}
+  #hint span b{font-weight:600;color:var(--cream)}
+  #card.show ~ #hint{opacity:0;pointer-events:none}
+
+  @media (max-width:880px){
+    #legend{top:auto;left:12px;right:12px;bottom:12px;width:auto;max-height:42vh;transform:translateY(calc(100% + 14px));transition:transform .45s cubic-bezier(.2,.9,.25,1);animation:none}
+    #legend.open{transform:none}
+    #toggleLegend{display:flex;position:fixed;right:14px;bottom:14px;z-index:23;align-items:center;gap:8px;border:0;cursor:pointer;
+      background:var(--navy);color:var(--cream);font-family:inherit;font-weight:600;font-size:13px;padding:11px 16px;border-radius:99px;box-shadow:var(--shadow)}
+    #toggleLegend .dot{width:8px;height:8px;border-radius:50%;background:var(--ember)}
+    #legend.open ~ #toggleLegend{display:none}
+    #card{left:12px;bottom:74px}
+    #hint{display:none}
+    #masthead{left:14px;top:14px}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<div id="loader">
+  <div class="loader-pines">
+    <svg class="p1" width="40" height="58" viewBox="0 0 40 58"><path d="M20 0 L34 22 L27 22 L38 40 L29 40 L40 56 L22 56 L22 58 L18 58 L18 56 L0 56 L11 40 L2 40 L13 22 L6 22 Z" fill="#5d8a66"/></svg>
+    <svg class="p2" width="52" height="74" viewBox="0 0 40 58"><path d="M20 0 L34 22 L27 22 L38 40 L29 40 L40 56 L22 56 L22 58 L18 58 L18 56 L0 56 L11 40 L2 40 L13 22 L6 22 Z" fill="#2f6b4f"/></svg>
+    <svg class="p3" width="40" height="58" viewBox="0 0 40 58"><path d="M20 0 L34 22 L27 22 L38 40 L29 40 L40 56 L22 56 L22 58 L18 58 L18 56 L0 56 L11 40 L2 40 L13 22 L6 22 Z" fill="#4a7d5d"/></svg>
+  </div>
+  <h1>Muskoka Woods<br><em>virtual property map</em></h1>
+  <div class="loader-bar"><i></i></div>
+  <div class="sub">Lake Rosseau · Ontario</div>
+</div>
+
+<div id="masthead">
+  <div class="kicker">Lake Rosseau · Ontario</div>
+  <h1>Muskoka Woods</h1>
+  <div class="tag"><b>1,000 acres</b> · 2,800 ft of shoreline · est. 1979</div>
+</div>
+
+<aside id="legend">
+  <header>
+    <div class="small">Field Guide</div>
+    <h2>Around the Property</h2>
+    <p>Click a location to fly there — or drag, scroll and explore the grounds yourself. Laid out from the real property.</p>
+  </header>
+  <div class="scroll" id="legendList"></div>
+  <footer><span>N <b>↑</b> top of map</span><span><b id="locCount"></b> locations</span></footer>
+</aside>
+<button id="toggleLegend"><span class="dot"></span>Field Guide</button>
+
+<div id="card">
+  <button class="close" id="cardClose">✕</button>
+  <span class="cat" id="cardCat"></span>
+  <h3 id="cardName"></h3>
+  <p id="cardBlurb"></p>
+  <div class="stat" id="cardStat"></div>
+</div>
+
+<div id="hint">
+  <span><b>Drag</b> orbit</span><span><b>Scroll</b> zoom</span><span><b>Right-drag</b> pan</span><span><b>Click</b> a building</span>
+</div>
+
+<div id="tip"></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* =====================================================================
+   REAL-WORLD DATA — extracted from OpenStreetMap + the official 2024
+   property map. 1 world unit = 2 m. x = east, z = south, origin near
+   the centre of camp (45.2492 N, 79.6170 W).
+===================================================================== */
+const SHORE = [[-267.5,49.5],[-239.7,49.7],[-217.3,45.1],[-190,22.5],[-179.3,3.8],[-168.8,-6.3],[-158.7,-8.4],[-149.6,-2.1],[-141.8,15.6],[-118.6,11.7],[-110.7,20.8],[-95.1,60.2],[-73.9,81.1],[-82,99.4],[-79.6,122.9],[-12,183.2],[1.7,187.2],[27.1,186.8],[59.4,172.5],[65.5,172.5],[71.8,179.6],[72.1,192.9],[61,209.4],[60.1,233.6],[48,251.9],[46.9,270.9],[27.7,297.6]];
+const LAKE_CLOSE = [[20,320],[-80,320],[-320,250],[-320,60]];   // closes the water polygon off-map (SW)
+const HWY = [[[285.6,126.9],[235.7,115.4],[199.6,98.8],[182.8,87.5],[154.3,58.9],[79.4,-44.5]],[[79.4,-44.5],[48,-89.3]],[[-71.3,-218.5],[-104.3,-238.1],[-128.6,-247.1],[-152.4,-254],[-222.2,-264.2],[-282.2,-259.7]],[[48,-89.3],[-17,-175],[-37.1,-193.9],[-71.3,-218.5]]];
+const ROADS = [[[-247,-154.6],[-242.6,-153.5],[-220.5,-162.2],[-209.4,-161]],[[-182.4,-229.9],[-187.2,-212.5],[-198.9,-198.2],[-228.2,-98.1],[-197.7,-78],[-185.1,-87.8]],[[-8.9,-8.7],[-46.9,-61.7],[-72.5,-81.1],[-102.4,-98.1],[-116.1,-165.6],[-141.2,-193.4],[-196.2,-239.9]],[[-217,-226.2],[-198.9,-198.2]],[[59.8,-72.3],[75.7,-105.1],[85.9,-109.1],[145.6,-105.3]],[[98.3,-18.5],[126.9,-34.7],[131.4,-40.8],[133.1,-58.5],[126.7,-83.3],[142.6,-95.1],[148.6,-112.1],[201.1,-123.3],[228.1,-145.6],[247.9,-149.7]],[[114.7,41.4],[123.7,45.6],[138,36.4]],[[72.8,-18.9],[91.3,-4.8],[114.5,31.1],[114.7,41.4],[90.9,55.3]],[[26.2,-30.2],[22.8,-13.3]],[[36.9,-14.1],[-1.4,-63.2],[12.5,-89.9],[22.4,-92],[33.3,-83.4],[48.9,-59.7]],[[91.7,-27.5],[72.8,-18.9],[-3.9,-11.7],[-30,7.4],[-23.6,13.5],[-18.2,13.5],[-15,-4.4]]];
+const BLDG = [[1,-6.5,100,21.5,11.5,-2.4],[2,-48.5,-97,11,11.5,0.11],[3,69,-117.5,5.5,3.5,-0.78],[4,-72.5,111,10,10,1],[5,-16.5,145.5,6,6,-0.86],[6,-43,-75,4,6,1.62],[7,120,-78.5,7,6,2.28],[8,-258,-149.5,20.5,14,-0.83],[9,-43.5,135.5,6.5,5,2.39],[10,158.5,91,9.5,10,2.77],[11,-52,-10.5,14,6,-2.4],[12,109.5,58.5,25.5,20.5,-0.96],[13,-40.5,-89,4,4.5,1.61],[14,-8,-95,8,7.5,-2.66],[15,-54,84.5,6.5,6.5,0.38],[16,127.5,59,8.5,7,0.48],[17,-55.5,-50,12.5,7,2.35],[18,-8,-81,9,8,2.1],[19,-248.5,-225.5,5,6.5,-1.65],[20,-36.5,138.5,6.5,6.5,1.15],[21,3,87,26.5,12.5,-2.36],[22,-47.5,57.5,5,5.5,0.22],[23,124,64.5,7,3.5,2.26],[24,-68,-40.5,8,6,-0.83],[25,45.5,-46,6,3.5,-0.78],[26,-183.5,-78.5,17,6.5,-0.82],[27,-2,-89,7,5.5,0.52],[28,-22.5,166.5,10,9,-2.23],[29,-50,91.5,7,9,-1.26],[30,-24,89,9.5,10,2.91],[31,-88,-22.5,8,5.5,-0.83],[32,0.5,-78.5,8.5,6.5,2.07],[33,77.5,206,7.5,8,-1.21],[34,-244.5,-213.5,4,6.5,-0.04],[35,-18,-96,7.5,6.5,2.05],[36,-31,141,5.5,5,-0.64],[37,-40.5,69.5,5,6.5,3.05],[38,134.5,-14.5,9.5,9,0.42],[39,-25,-9.5,13.5,13,2.55],[40,-147,-34.5,10.5,16.5,-1.61],[41,-31,-82,5.5,4,0.87],[42,2,175.5,10,10,-0.35],[43,-48,102,11,10.5,-1.33],[44,-28.5,100,8.5,8.5,1.09],[45,-92.5,-36,8,6.5,2.36],[46,4,-39.5,5.5,7.5,0.89],[47,90,237.5,14,10.5,2.4],[48,-240.5,-173,30,26.5,2.7],[49,-7.5,-105.5,6.5,6,-1.06],[50,-26.5,146,5,4.5,-0.72],[51,-51,-81,4.5,6,1.64],[52,129.5,51.5,9.5,3,-2.32],[53,-26.5,31,23,19,2.28],[54,-113.5,-83.5,14,14.5,-0.39],[55,-10.5,-57.5,21,15,-2.6],[56,62.5,156,11.5,11,1.05],[57,-77.5,-31,8.5,7,2.31],[58,-22.5,77.5,10.5,11,-0.31]];
+const COURTS = [[84,71,10.5,12,0.5],[77.5,75,10.5,12,0.5],[71,80,10.5,12,0.5],[63.5,84.5,10.5,12,0.5]]; // real OSM pitches
+const PIER = [[-79.5,108],[-95,113],[-96,122]];
+
+/* =====================================================================
+   LOCATIONS — names from the official Muskoka Woods map (2024)
+===================================================================== */
+const GROUPS = {
+  venues:     { label:'Signature Venues',  color:0x1d3c57, css:'#1d3c57' },
+  stay:       { label:'Stay',              color:0x2f6b4f, css:'#2f6b4f' },
+  sports:     { label:'Sports & Rec',      color:0xe4572e, css:'#e4572e' },
+  adventure:  { label:'Adventure',         color:0x8a5a2b, css:'#8a5a2b' },
+  waterfront: { label:'Waterfront',        color:0x2b7ea1, css:'#2b7ea1' },
+};
+
+const LOCATIONS = [
+  { id:'musichall', group:'venues', pos:[-26.5,31], name:'Music Hall',
+    blurb:'The big round hall at the very centre of camp — main-stage sessions, band nights and all-camp gatherings under one sweeping roof.', stat:['300','seated capacity'] },
+  { id:'dining', group:'venues', pos:[-25,-9.5], name:'Dining Hall',
+    blurb:'Three squares a day for the whole camp — the loudest, happiest room on the property at 12:30 sharp.', stat:['3×','daily, all-camp'] },
+  { id:'heritage', group:'venues', pos:[-10.5,-57.5], name:'Heritage 1979',
+    blurb:'Named for the year Muskoka Woods began — program space in the heart of the north campus, beside the Village.', stat:['est.','1979'] },
+  { id:'hangar', group:'venues', pos:[3,87], name:'The Hangar',
+    blurb:'Muskoka Woods’ largest venue — full stage, 28-ft screen, concert sound and lighting, with the Backyard lawn out the door.', stat:['1,200','capacity, standing'] },
+  { id:'backyard', group:'venues', pos:[16,76], name:'The Backyard',
+    blurb:'The Hangar’s outdoor stage and lawn — open-air sessions, tournaments and campfires of the louder kind.', stat:['250','capacity, open air'] },
+  { id:'fieldhouse', group:'venues', pos:[109.5,58.5], name:'The Fieldhouse',
+    blurb:'15,000 sq ft of hardwood by the front gate — courts, conference rooms and the indoor climbing wall.', stat:['700','main-gym capacity'] },
+  { id:'boathouse', group:'venues', pos:[2,177.5], name:'The Boathouse',
+    blurb:'Right on the point with a clear view across Lake Rosseau — games, dances and lake-breeze hangouts.', stat:['150','capacity'] },
+  { id:'studio', group:'venues', pos:[-72.5,111], name:'Leadership Studio',
+    blurb:'A 4,000 sq ft fireplace-warmed studio on the shoreline, purpose-built for the CEO leadership experience.', stat:['4,000','sq ft on the shore'] },
+  { id:'ceolodge', group:'venues', pos:[-55.5,-50], name:'CEO Lodge',
+    blurb:'Home base for the CEO program and executive retreats — sessions and strategy with a hillside view.', stat:['150','capacity'] },
+  { id:'mac', group:'venues', pos:[-52,-10.5], name:'The MAC',
+    blurb:'Mackenzie’s Art Corner — a bright little studio for crafts, painting and quiet creative hours.', stat:['Art','corner'] },
+  { id:'mainoffice', group:'venues', pos:[-22.5,77.5], name:'Main Office',
+    blurb:'The front desk of camp life — questions, lost waterbottles and walkie-talkie central.', stat:['HQ','south campus'] },
+  { id:'imprint', group:'venues', pos:[-147,-34.5], name:'Imprint Studio',
+    blurb:'Arts & crafts on the west side — screen printing, painting and maker projects.', stat:['Arts','& crafts'] },
+  { id:'ian', group:'venues', pos:[-48.5,-97], name:'Ian’s Place',
+    blurb:'The north-campus hangout at the top of the Village.', stat:['North','campus'] },
+
+  { id:'village', group:'stay', pos:[-44,-82], name:'The Village',
+    blurb:'A frontier main street of themed cabins — Ironworks, General Store, Town Hall, the Bank, Lost Creek Hotel, Firehouse and friends.', stat:['12','themed buildings'] },
+  { id:'treetops', group:'stay', pos:[-7,-90], name:'Treetops',
+    blurb:'Cabin rows 1–12 in the trees on the north hill, a short walk from Heritage 1979 and the Village.', stat:['1–12','cabins'] },
+  { id:'timberviews', group:'stay', pos:[-80,-32], name:'Timberviews',
+    blurb:'Timbergrove Lodge and Timberviews 3–10 on the west slope above the MAC.', stat:['13–18','on the map'] },
+  { id:'hillside', group:'stay', pos:[-113.5,-83.5], name:'Hillside Inn',
+    blurb:'The lodge on the west hill, between the Village and the trails.', stat:['West','hill'] },
+  { id:'chalets', group:'stay', pos:[-46,82], name:'The Chalets',
+    blurb:'A-frame country above the waterfront — steps from the beach and the Leadership Studio.', stat:['Lakeside','cluster'] },
+  { id:'royal', group:'stay', pos:[-6.5,100], name:'Royal Muskoka',
+    blurb:'The grand lodge of the south campus, a stone’s throw from the Hangar and the shore.', stat:['Grand','lodge'] },
+  { id:'havington', group:'stay', pos:[-24,89], name:'Havington',
+    blurb:'South-campus lodge beside the Main Office and Royal Muskoka.', stat:['South','campus'] },
+  { id:'woodsend', group:'stay', pos:[-30,143], name:'Woods End',
+    blurb:'Sprucewood, Cedarwood, Elmwood, Beechwood, Redwood, Birchwood, Oakwood and Willowwood — the cabin lane above the Boathouse.', stat:['19–26','on the map'] },
+
+  { id:'thepark', group:'sports', pos:[-243,-162], name:'The Park · Action Sports',
+    blurb:'80,000 sq ft of skate, scooter and BMX terrain on the west side — now with a huge indoor pump track.', stat:['80,000','sq ft of send-it'] },
+  { id:'tennis', group:'sports', pos:[74,78], name:'Tennis & Pickleball',
+    blurb:'The racket-sports courts along the east side — tennis, pickleball and badminton.', stat:['12','courts'] },
+  { id:'leisure', group:'sports', pos:[55,85.5], name:'Leisure Sports Court',
+    blurb:'Basketball, ball hockey and broomball — the all-purpose court by the tennis row.', stat:['⛹','multi-sport'] },
+  { id:'broomball', group:'sports', pos:[47,36], name:'Broomball Rink',
+    blurb:'Runners, brooms, chaos — the boarded rink below the front field.', stat:['🧹','classic camp'] },
+  { id:'field', group:'sports', pos:[25,2], name:'Playing Field',
+    blurb:'The main field — flag rugby, ultimate frisbee and wide-open camp games.', stat:['⚑','rugby · ultimate'] },
+  { id:'vball', group:'sports', pos:[-65,38], name:'Beach Volleyball',
+    blurb:'Sand courts on the slope between Music Hall and the waterfront.', stat:['2','sand courts'] },
+  { id:'range', group:'sports', pos:[-225,-15], name:'Driving Range',
+    blurb:'Golf training on the west meadow — nets, mats and a long fairway of grass.', stat:['⛳','drive & putt'] },
+  { id:'discgolf', group:'sports', pos:[-190,30], name:'Disc Golf',
+    blurb:'A basket course threaded through the southwest meadows.', stat:['🥏','course'] },
+
+  { id:'upperzip', group:'adventure', pos:[-165,-62], name:'Upper Zipline',
+    blurb:'A 1,000-foot flight across the west meadow — the best ten seconds at camp.', stat:['1,000','feet of flight'] },
+  { id:'lowerzip', group:'adventure', pos:[45,108], name:'Lower Zipline',
+    blurb:'The second line, dropping out of the east woods toward Woods End.', stat:['Zip','#2'] },
+  { id:'highropes', group:'adventure', pos:[84,102], name:'High Ropes',
+    blurb:'The largest and highest ropes course in Canada — towers, crossings and a whole lot of nerve.', stat:['#1','largest in Canada'] },
+  { id:'lowropes', group:'adventure', pos:[-170,-120], name:'Low Ropes',
+    blurb:'Team challenges closer to the ground, on the northwest meadow.', stat:['Team','building'] },
+  { id:'giantswing', group:'adventure', pos:[-75,-3], name:'Giant Swing',
+    blurb:'Winch up, deep breath, rip cord — the pendulum between Timberviews and Music Hall.', stat:['3…2…1','release'] },
+  { id:'archery', group:'adventure', pos:[-226,-152], name:'Archery Range',
+    blurb:'Bows, targets and bullseyes out at the Park.', stat:['🎯','steady… release'] },
+  { id:'archerytag', group:'adventure', pos:[126,44], name:'Archery Tag',
+    blurb:'Dodge, duck and loose foam arrows beside the Fieldhouse.', stat:['Tag','with bows'] },
+  { id:'basecamp', group:'adventure', pos:[120,-78.5], name:'Base Camp · Hike',
+    blurb:'Across Highway 141 — the trailhead into a thousand acres of Muskoka woods.', stat:['1,000','acres of trails'] },
+
+  { id:'beach', group:'waterfront', pos:[-75,92], name:'Swim Beach',
+    blurb:'The sandy cove on Lake Rosseau — supervised swimming beside the Leadership Studio.', stat:['2,800','ft of shoreline'] },
+  { id:'docks', group:'waterfront', pos:[-90,114], name:'Waterfront Docks',
+    blurb:'Waterski, wakeboard, kneeboard and tubing sets — boats run all day off the main pier.', stat:['🛥','ski · wake · tube'] },
+  { id:'wibit', group:'waterfront', pos:[-108,94], name:'Wibit Waterpark',
+    blurb:'The giant floating obstacle course — climb, bounce, slip, splash, repeat.', stat:['💦','floating obstacle run'] },
+  { id:'kraken', group:'waterfront', pos:[24,38], name:'KrakenRACER Waterslide',
+    blurb:'Six lanes of head-first racing down to the splash pool below the front field.', stat:['6','racing lanes'] },
+];
+
+/* =====================================================================
+   CORE SETUP
+===================================================================== */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.06;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xc8dde6, 380, 900);
+
+const camera = new THREE.PerspectiveCamera(46, innerWidth/innerHeight, 0.1, 1600);
+camera.position.set(-180, 280, 480);
+
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(-25, 4, 10);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.maxPolarAngle = 1.42;
+controls.minDistance = 28;
+controls.maxDistance = 480;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.4;
+canvas.addEventListener('pointerdown', () => { controls.autoRotate = false; canvas.classList.add('dragging'); });
+addEventListener('pointerup', () => canvas.classList.remove('dragging'));
+
+const tweens = [];
+const easeInOut = t => t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+function tween(dur, onUpdate, onDone){ tweens.push({ start:performance.now(), dur, onUpdate, onDone }); }
+function stepTweens(now){
+  for (let i=tweens.length-1; i>=0; i--){
+    const tw = tweens[i];
+    let t = (now - tw.start) / tw.dur;
+    if (t >= 1){ tw.onUpdate(1); tweens.splice(i,1); tw.onDone && tw.onDone(); }
+    else tw.onUpdate(easeInOut(Math.max(t,0)));
+  }
+}
+
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+const rng = mulberry32(20260610);
+const hash2 = (x,y) => { const s = Math.sin(x*127.1 + y*311.7) * 43758.5453; return s - Math.floor(s); };
+function vnoise(x,y){
+  const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  return hash2(xi,yi)*(1-u)*(1-v) + hash2(xi+1,yi)*u*(1-v) + hash2(xi,yi+1)*(1-u)*v + hash2(xi+1,yi+1)*u*v;
+}
+const fbm = (x,y) => vnoise(x,y)*0.65 + vnoise(x*2.7+5.2, y*2.7+1.3)*0.35;
+
+/* =====================================================================
+   TERRAIN — signed distance to the real Lake Rosseau shoreline
+===================================================================== */
+const LAKE_POLY = SHORE.concat(LAKE_CLOSE);
+function insideLake(x,z){
+  let inside = false;
+  for (let i=0, j=LAKE_POLY.length-1; i<LAKE_POLY.length; j=i++){
+    const [xi,zi]=LAKE_POLY[i], [xj,zj]=LAKE_POLY[j];
+    if ((zi>z)!==(zj>z) && x < (xj-xi)*(z-zi)/(zj-zi)+xi) inside = !inside;
+  }
+  return inside;
+}
+function distToShore(x,z){
+  let best = 1e9;
+  for (let i=0;i<SHORE.length-1;i++){
+    const [ax,az]=SHORE[i], [bx,bz]=SHORE[i+1];
+    const dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz;
+    let t = L2 ? ((x-ax)*dx+(z-az)*dz)/L2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(x-(ax+dx*t), z-(az+dz*t));
+    if (d < best) best = d;
+  }
+  return best;
+}
+const landDist = (x,z) => insideLake(x,z) ? -distToShore(x,z) : distToShore(x,z);
+
+const gauss = (x,z,cx,cz,s) => Math.exp(-(((x-cx)*(x-cx))+((z-cz)*(z-cz)))/(2*s*s));
+const HILLS = [
+  [150,-150,90,14],[30,-180,80,10],[-150,-235,95,12],   // ridge along Hwy 141
+  [-230,-120,85,9],[-140,-95,60,5],                     // west upland (the Park plateau)
+  [100,62,55,3],[95,140,38,5],[160,20,60,6],            // east rises
+  [-60,-150,55,4],
+];
+const PADS = [];
+for (const [,x,z,w,d] of BLDG) PADS.push([x, z, Math.max(w,d)*0.85+3.5]);
+for (const p of [[74,78,18],[55,85.5,7],[47,36,9],[25,2,30],[-65,38,8],[-225,-15,18],[-200,-8,14],[-190,30,16],
+                 [-243,-162,27],[-12,57,7],[-75,-3,6],[-170,-120,10],[-226,-152,10],[126,44,7],[120,-78.5,9],[24,38,10],[16,76,10]]) PADS.push(p);
+
+function rawHeight(x,z){
+  const d = landDist(x,z);
+  if (d <= 0) return Math.max(-3.4, -0.5 + d*0.18 - fbm(x*0.05,z*0.05)*0.4);
+  let h = 4.4*(1 - Math.exp(-d/34));
+  for (const [cx,cz,s,a] of HILLS) h += a * gauss(x,z,cx,cz,s);
+  h += (fbm(x*0.022+3, z*0.022+7)-0.5) * 2.6;
+  h += (fbm(x*0.085, z*0.085)-0.5) * 0.8;
+  const beach = Math.min(1, d/6.5);
+  return h * beach * beach + 0.3*Math.min(1,d/2.5);
+}
+const padH = PADS.map(([x,z]) => rawHeight(x,z));
+function heightAt(x,z){
+  let h = rawHeight(x,z);
+  for (let i=0;i<PADS.length;i++){
+    const [px,pz,r] = PADS[i];
+    const ddx = x-px, ddz = z-pz;
+    if (ddx>r||ddx<-r||ddz>r||ddz<-r) continue;
+    const dd = Math.hypot(ddx,ddz);
+    if (dd < r){ const w = 1 - (dd/r); const k = w*w*(3-2*w); h = h + (padH[i]-h)*Math.min(1, k*1.4); }
+  }
+  return h;
+}
+const groundY = (x,z) => Math.max(0.05, heightAt(x,z));
+
+/* ---------- terrain mesh ---------- */
+const C = {
+  grassA:new THREE.Color(0x6da06b), grassB:new THREE.Color(0x4f8a5d), grassC:new THREE.Color(0x86ad6b),
+  forest:new THREE.Color(0x3f7352), sand:new THREE.Color(0xe7cf9f), sandWet:new THREE.Color(0xd3b886),
+  granite:new THREE.Color(0x9aa3a4), graniteSun:new THREE.Color(0xb5b0a3), shallow:new THREE.Color(0x8fc7c2),
+  bed:new THREE.Color(0x3e7d8e), meadow:new THREE.Color(0x93b06e),
+};
+{
+  const W=820, D=820, SX=200, SZ=200, CXo=-55, CZo=25;
+  let g = new THREE.PlaneGeometry(W, D, SX, SZ);
+  g.rotateX(-Math.PI/2);
+  g.translate(CXo, 0, CZo);
+  const p = g.attributes.position;
+  for (let i=0;i<p.count;i++) p.setY(i, heightAt(p.getX(i), p.getZ(i)));
+  g = g.toNonIndexed();
+  g.computeVertexNormals();
+  const pos = g.attributes.position, nrm = g.attributes.normal;
+  const colors = new Float32Array(pos.count*3);
+  const c = new THREE.Color();
+  for (let f=0; f<pos.count; f+=3){
+    const x=(pos.getX(f)+pos.getX(f+1)+pos.getX(f+2))/3;
+    const y=(pos.getY(f)+pos.getY(f+1)+pos.getY(f+2))/3;
+    const z=(pos.getZ(f)+pos.getZ(f+1)+pos.getZ(f+2))/3;
+    const up=(nrm.getY(f)+nrm.getY(f+1)+nrm.getY(f+2))/3;
+    const d = landDist(x,z), n = fbm(x*0.045+11, z*0.045+4);
+    if (y < -0.15)          c.copy(C.bed).lerp(C.shallow, THREE.MathUtils.clamp(1+(y+0.15)/2.4,0,1));
+    else if (d < 5)         c.copy(C.sandWet).lerp(C.sand, THREE.MathUtils.clamp(d/5,0,1));
+    else if (up < 0.62)     c.copy(C.granite).lerp(C.graniteSun, n);
+    else if (y > 21)        c.copy(C.forest).lerp(C.granite, 0.25+n*0.25);
+    else {
+      const meadowy = (x < -120 && z < 50 && z > -150) ? 0.55 : 0;   // west meadows
+      c.copy(C.grassA).lerp(n>0.55?C.grassC:C.grassB, Math.abs(n-0.5)*2);
+      if (meadowy) c.lerp(C.meadow, meadowy*(0.4+n*0.6));
+      else if (d > 34) c.lerp(C.forest, Math.min(0.55, (d-34)/80));
+    }
+    const shade = 0.93 + hash2(f,1)*0.11;
+    for (let k=0;k<3;k++){ colors[(f+k)*3]=c.r*shade; colors[(f+k)*3+1]=c.g*shade; colors[(f+k)*3+2]=c.b*shade; }
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colors,3));
+  const terrain = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors:true, flatShading:true, roughness:1 }));
+  terrain.receiveShadow = true;
+  scene.add(terrain);
+}
+
+/* ---------- water ---------- */
+let waterGeo;
+{
+  waterGeo = new THREE.PlaneGeometry(2600, 2600, 130, 130);
+  waterGeo.rotateX(-Math.PI/2);
+  waterGeo.translate(-55, 0, 25);
+  const water = new THREE.Mesh(waterGeo, new THREE.MeshPhongMaterial({
+    color:0x2b7ea1, flatShading:true, transparent:true, opacity:0.9, shininess:120, specular:0x9fd8e8,
+  }));
+  scene.add(water);
+  const deep = new THREE.Mesh(new THREE.PlaneGeometry(2600,2600), new THREE.MeshBasicMaterial({ color:0x1d5f7e }));
+  deep.rotation.x = -Math.PI/2; deep.position.set(-55,-2.8,25);
+  scene.add(deep);
+}
+const waterBase = waterGeo.attributes.position.array.slice();
+
+/* ---------- sky ---------- */
+{
+  const sky = new THREE.Mesh(
+    new THREE.SphereGeometry(900, 24, 12),
+    new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite:false, fog:false,
+      uniforms:{ top:{value:new THREE.Color(0x7fb4d6)}, mid:{value:new THREE.Color(0xc8dde6)}, bot:{value:new THREE.Color(0xe9ddc4)} },
+      vertexShader:`varying vec3 vP; void main(){ vP=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+      fragmentShader:`varying vec3 vP; uniform vec3 top,mid,bot;
+        void main(){ float h=normalize(vP).y;
+          vec3 c = h>0.12 ? mix(mid,top,smoothstep(0.12,0.65,h)) : mix(bot,mid,smoothstep(-0.06,0.12,h));
+          gl_FragColor = vec4(c,1.);}`
+    }));
+  scene.add(sky);
+}
+
+/* ---------- lights ---------- */
+scene.add(new THREE.HemisphereLight(0xbcd9e6, 0x5d7a52, 0.85));
+const sun = new THREE.DirectionalLight(0xfff0d2, 2.3);
+sun.position.set(-260, 300, 190);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+const sc = sun.shadow.camera;
+sc.left=-330; sc.right=330; sc.top=330; sc.bottom=-330; sc.far=1000;
+sun.shadow.bias = -0.00045;
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xdfeaf2, 0.22));
+
+/* ---------- clouds ---------- */
+const clouds = new THREE.Group();
+{
+  const cMat = new THREE.MeshStandardMaterial({ color:0xffffff, flatShading:true, roughness:1, transparent:true, opacity:0.92 });
+  for (let i=0;i<9;i++){
+    const puff = new THREE.Group();
+    const n = 3 + Math.floor(rng()*3);
+    for (let j=0;j<n;j++){
+      const m = new THREE.Mesh(new THREE.IcosahedronGeometry(9+rng()*10, 0), cMat);
+      m.position.set(j*13 - n*6 + rng()*6, rng()*4, rng()*9-4);
+      m.scale.y = 0.5; puff.add(m);
+    }
+    puff.position.set(rng()*800-450, 150+rng()*60, rng()*760-360);
+    puff.userData.speed = 0.9 + rng()*0.9;
+    clouds.add(puff);
+  }
+  scene.add(clouds);
+}
+
+/* =====================================================================
+   BUILD HELPERS
+===================================================================== */
+const { mergeGeometries } = await import('three/addons/utils/BufferGeometryUtils.js');
+
+const matCache = new Map();
+function mat(color, opts={}){
+  const key = color + JSON.stringify(opts);
+  if (!matCache.has(key)) matCache.set(key, new THREE.MeshStandardMaterial({ color, flatShading:true, roughness:0.92, ...opts }));
+  return matCache.get(key);
+}
+function B(parent, geo, material, x=0, y=0, z=0){
+  const m = new THREE.Mesh(geo, material);
+  m.position.set(x,y,z); m.castShadow = true; m.receiveShadow = true;
+  parent.add(m); return m;
+}
+function prismGeo(w, h, d){
+  const x=w/2, z=d/2;
+  const v = [[-x,0,z],[x,0,z],[0,h,z],[x,0,-z],[-x,0,-z],[0,h,-z]];
+  const idx = [0,1,2, 3,4,5, 1,3,5, 1,5,2, 4,0,2, 4,2,5, 0,4,3, 0,3,1];
+  const posArr = [];
+  for (const i of idx) posArr.push(...v[i]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(posArr,3));
+  g.computeVertexNormals();
+  return g;
+}
+// gable roof with the ridge along the LONG (x) axis
+function roofX(g, w, rh, d, color, y){
+  const m = B(g, prismGeo(d, rh, w), mat(color), 0, y, 0);
+  m.rotation.y = Math.PI/2;
+  return m;
+}
+function house(w, wallH, d, roofH, bodyColor, roofColor){
+  const g = new THREE.Group();
+  B(g, new THREE.BoxGeometry(w, wallH, d), mat(bodyColor), 0, wallH/2, 0);
+  roofX(g, w+0.9, roofH, d+1.0, roofColor, wallH-0.02);
+  return g;
+}
+function placeOnGround(obj, x, z, ry=0, lift=0){
+  obj.position.set(x, groundY(x,z)+lift, z);
+  obj.rotation.y = ry;
+  scene.add(obj);
+  return obj;
+}
+
+/* =====================================================================
+   ROADS, TRAILS
+===================================================================== */
+const pathPolylines = [];
+function ribbon(points, width, color, lift=0.18, register=true){
+  const pts = points.map(([x,z]) => new THREE.Vector3(x, 0, z));
+  const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.35);
+  const N = Math.max(10, Math.round(curve.getLength()/2.4));
+  const verts=[], idx=[];
+  let prev = null;
+  for (let i=0;i<=N;i++){
+    const t=i/N, p=curve.getPoint(t), tan=curve.getTangent(t);
+    const nx=-tan.z, nz=tan.x, w=width/2;
+    const ax=p.x+nx*w, az=p.z+nz*w, bx=p.x-nx*w, bz=p.z-nz*w;
+    verts.push(ax, Math.max(0.12, heightAt(ax,az))+lift, az,
+               bx, Math.max(0.12, heightAt(bx,bz))+lift, bz);
+    if (i>0){ const k=i*2; idx.push(k-2,k-1,k, k-1,k+1,k); }
+    if (register){ if (prev) pathPolylines.push([prev.x,prev.z,p.x,p.z, width]); prev = p; }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
+  g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color, flatShading:true, roughness:1, polygonOffset:true, polygonOffsetFactor:-2 }));
+  m.receiveShadow = true;
+  scene.add(m);
+}
+const GRAVEL = 0xcfc0a0, ASPHALT = 0x5e6266, CAMPROAD = 0xb9a98c;
+for (const line of HWY){ ribbon(line, 7, ASPHALT, 0.18); ribbon(line, 0.55, 0xd8b13f, 0.26, false); }
+for (const line of ROADS) ribbon(line, 4, CAMPROAD, 0.16);
+const TRAILS = [
+  [[-72,104],[-58,112],[-46,124],[-36,136],[-28,148],[-18,160],[-6,172],[2,177]],
+  [[-25,-9.5],[-26,10],[-26.5,31],[-22,50],[-12,57],[-5,70],[3,80]],
+  [[-26.5,31],[-45,36],[-65,38],[-76,52],[-82,66],[-84,82],[-86,90]],
+  [[-86,90],[-82,100],[-79.5,108]],
+  [[-12,57],[-22,72],[-26,86],[-16,96],[-6.5,100],[2,92],[3,87]],
+  [[5,94],[6,116],[0,140],[0,162],[2,174]],
+  [[-3,-11],[10,-6],[25,2],[40,16],[46,30],[52,48],[58,64],[63,76],[74,90],[84,100]],
+  [[74,78],[90,70],[100,64],[108,58]],
+  [[-48,-90],[-43,-80],[-30,-78],[-16,-86],[-7,-92]],
+  [[-4,-78],[-8,-66],[-10,-58]],
+  [[-12,-52],[-20,-36],[-24,-22],[-25,-12]],
+  [[-25,-12],[-38,-11],[-52,-10.5],[-62,-22],[-70,-32],[-80,-32]],
+  [[-70,-32],[-62,-42],[-55.5,-50],[-50,-62],[-44,-72]],
+  [[-62,-8],[-75,-3]],
+  [[-104,-90],[-122,-66],[-138,-48],[-147,-38]],
+  [[-197,-78],[-205,-50],[-215,-22],[-225,-15],[-210,10],[-195,24],[-190,30]],
+  [[-228,-110],[-200,-118],[-170,-120]],
+  [[120,-78],[131,-94],[138,-114],[148,-132]],
+  [[109.5,58.5],[120,50],[126,44]],
+];
+for (const t of TRAILS) ribbon(t, 2.4, GRAVEL);
+
+function distToPaths(x,z){
+  let best = 1e9;
+  for (const [ax,az,bx,bz,w] of pathPolylines){
+    const dx=bx-ax, dz=bz-az, L2=dx*dx+dz*dz;
+    let t = L2 ? ((x-ax)*dx+(z-az)*dz)/L2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(x-(ax+dx*t), z-(az+dz*t)) - w/2;
+    if (d < best) best = d;
+  }
+  return best;
+}
+
+/* =====================================================================
+   FOREST
+===================================================================== */
+function clearOfPads(x,z,margin=1.1){
+  for (const [px,pz,r] of PADS) if (Math.hypot(x-px,z-pz) < r*margin) return false;
+  return true;
+}
+{
+  const canopyGeo = mergeGeometries([
+    new THREE.ConeGeometry(2.6, 3.4, 6).translate(0, 3.4, 0),
+    new THREE.ConeGeometry(2.0, 3.0, 6).translate(0, 5.5, 0),
+    new THREE.ConeGeometry(1.35, 2.6, 6).translate(0, 7.5, 0),
+  ]);
+  const trunkGeo = new THREE.CylinderGeometry(0.34, 0.46, 2.6, 5).translate(0, 1.3, 0);
+  const birchGeo = mergeGeometries([
+    new THREE.IcosahedronGeometry(1.9, 0).translate(0, 5.0, 0),
+    new THREE.IcosahedronGeometry(1.3, 0).translate(0.9, 3.8, 0.3),
+  ]);
+  const birchTrunkGeo = new THREE.CylinderGeometry(0.22, 0.3, 4.4, 5).translate(0, 2.2, 0);
+  const rockGeo = new THREE.DodecahedronGeometry(1.2, 0);
+
+  const spots = { pine:[], birch:[], rock:[] };
+  let guard = 0;
+  while (spots.pine.length < 1250 && guard++ < 46000){
+    const x = rng()*816-463, z = rng()*816-385;
+    const d = landDist(x,z);
+    if (d < 5) continue;
+    const h = rawHeight(x,z);
+    if (h < 0.55) continue;
+    if (!clearOfPads(x,z)) continue;
+    if (distToPaths(x,z) < 3) continue;
+    let forestness = Math.min(1, Math.max(0, (d-20)/55)) + fbm(x*0.02,z*0.02)*0.55;
+    if (x < -120 && z < 50 && z > -150) forestness *= 0.25;          // west meadows stay open
+    if (x > -60 && x < 50 && z > -10 && z < 60) forestness *= 0.3;   // central campus lawn
+    if (rng() > forestness*0.95 + 0.04) continue;
+    const r = rng();
+    if (r < 0.72) spots.pine.push([x,z]);
+    else if (r < 0.92) spots.birch.push([x,z]);
+    else spots.rock.push([x,z]);
+  }
+  for (let i=0;i<40;i++){    // shoreline boulders
+    const t = rng()*(SHORE.length-1), si = Math.floor(t);
+    const [ax,az] = SHORE[si], [bx,bz] = SHORE[si+1], k = t-si;
+    const x = ax+(bx-ax)*k + (rng()*4-2), z = az+(bz-az)*k + (rng()*4-2);
+    if (clearOfPads(x,z) && distToPaths(x,z) > 2) spots.rock.push([x,z]);
+  }
+  const dummy = new THREE.Object3D();
+  const pineGreens = [new THREE.Color(0x2f6b4f), new THREE.Color(0x3c7a54), new THREE.Color(0x27584a), new THREE.Color(0x4a8459)];
+  function fill(geo, material, list, opts={}){
+    if (!list.length) return;
+    const im = new THREE.InstancedMesh(geo, material, list.length);
+    im.castShadow = true; im.receiveShadow = opts.recv ?? false;
+    list.forEach(([x,z], i) => {
+      const s = (opts.smin??0.7) + rng()*(opts.svar??0.85);
+      dummy.position.set(x, Math.max(0.1, heightAt(x,z)) - 0.15, z);
+      dummy.rotation.set(opts.tilt ? (rng()-0.5)*0.16 : 0, rng()*Math.PI*2, opts.tilt ? (rng()-0.5)*0.16 : 0);
+      dummy.scale.set(s, s*(opts.ys??1), s);
+      dummy.updateMatrix();
+      im.setMatrixAt(i, dummy.matrix);
+      if (opts.colors) im.setColorAt(i, opts.colors[Math.floor(rng()*opts.colors.length)]);
+    });
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    scene.add(im);
+  }
+  fill(canopyGeo, new THREE.MeshStandardMaterial({ color:0xffffff, flatShading:true, roughness:1 }), spots.pine, { colors:pineGreens, tilt:true, smin:0.7, svar:1.05 });
+  fill(trunkGeo, mat(0x6b4a32), spots.pine, { smin:0.7, svar:1.05 });
+  fill(birchGeo, new THREE.MeshStandardMaterial({ color:0xffffff, flatShading:true, roughness:1 }), spots.birch, { colors:[new THREE.Color(0x8fb55e), new THREE.Color(0xa8c46a), new THREE.Color(0x7da757)], tilt:true });
+  fill(birchTrunkGeo, mat(0xe8e4d8), spots.birch);
+  fill(rockGeo, new THREE.MeshStandardMaterial({ color:0xffffff, flatShading:true, roughness:1 }), spots.rock, { colors:[new THREE.Color(0x9aa3a4), new THREE.Color(0xb5b0a3), new THREE.Color(0x8a958f)], ys:0.62, recv:true, smin:0.5, svar:1.7 });
+}
+
+/* =====================================================================
+   BUILDINGS — every real OSM footprint, styled by what it is
+===================================================================== */
+const WOOD=0x8a5a2b, CEDAR=0x9c6b3d, DARKWOOD=0x5e4226, CREAM=0xf2e8d2, NAVY=0x1d3c57,
+      RED=0xc24d2e, TEAL=0x2b7ea1, SLATE=0x6f7d86, WHITE=0xf6f3ea, GREENROOF=0x3e5d46, METAL=0x8e979c;
+const animated = [];
+
+const STYLE = {
+  53:'musichall', 12:'fieldhouse', 21:'hangar', 42:'boathouse', 4:'studio', 1:'royal',
+  39:'lodgeBig', 55:'lodgeBig', 17:'ceochalet', 11:'artshed', 58:'office', 2:'lodgeNavy',
+  54:'inn', 40:'barn', 48:'parkbarn', 8:'parkshed', 30:'lodge', 44:'lodge', 56:'lodge',
+  43:'lodge', 28:'lodge', 26:'barn',
+};
+for (const id of [6,13,41,51]) STYLE[id]='western';
+for (const id of [14,18,27,32,35,49]) STYLE[id]='cabinGreen';
+for (const id of [24,31,45,57]) STYLE[id]='cabinNavy';
+for (const id of [15,22,29,37]) STYLE[id]='aframe';
+for (const id of [5,9,20,36,50]) STYLE[id]='cabinTeal';
+
+function door(g, w, d, color=DARKWOOD){ B(g, new THREE.BoxGeometry(1.2,1.7,0.18), mat(color), w/4, 0.85, d/2+0.1); }
+function windows(g, w, h, d, color=0xbfe0ec){
+  const n = Math.max(1, Math.floor(w/3.4));
+  for (let i=0;i<n;i++) B(g, new THREE.BoxGeometry(1.1,0.9,0.14), mat(color,{transparent:true,opacity:0.9}), -w/2+ (i+0.7)*(w/(n+0.4)), h*0.62, d/2+0.08);
+}
+const westernCols = [[0xc24d2e,WHITE],[0xe8a33d,DARKWOOD],[0x7d9c84,WHITE],[0xf2e8d2,RED],[0x44617a,CREAM]];
+let westernIdx = 0;
+
+function buildFor(id, w, d){
+  const s = STYLE[id] || (Math.max(w,d) > 10 ? 'lodge' : 'cabin');
+  const g = new THREE.Group();
+  switch (s){
+    case 'musichall': {
+      const r = Math.min(w,d)/2 + 1;
+      B(g, new THREE.CylinderGeometry(r, r+0.4, 4.4, 14), mat(NAVY), 0, 2.2, 0);
+      B(g, new THREE.ConeGeometry(r+1.8, 6.6, 14), mat(WHITE), 0, 4.4, 0);
+      B(g, new THREE.CylinderGeometry(1.6, 1.6, 1.7, 8), mat(NAVY), 0, 10.7, 0);
+      B(g, new THREE.ConeGeometry(2.3, 2.0, 8), mat(RED), 0, 12.3, 0);
+      B(g, new THREE.BoxGeometry(5.5, 2.6, 3), mat(CREAM), 0, 1.3, r+0.8);
+      B(g, prismGeo(6.3, 1.6, 3.6), mat(RED), 0, 2.5, r+0.8);
+      door(g, 0, (r+0.8)*2);
+      break;
+    }
+    case 'fieldhouse': {
+      B(g, new THREE.BoxGeometry(w, 6.4, d), mat(0xd8d2c2), 0, 3.2, 0);
+      const roof = B(g, new THREE.CylinderGeometry(d/2*1.04, d/2*1.04, w+0.8, 16, 1, false, 0, Math.PI), mat(WHITE), 0, 6.35, 0);
+      roof.rotation.z = Math.PI/2; roof.scale.x = 0.42;
+      B(g, new THREE.BoxGeometry(w+0.3, 1.0, d+0.3), mat(NAVY), 0, 6.0, 0);
+      B(g, new THREE.BoxGeometry(w*0.5, 3.2, 0.4), mat(0x9fc6d8,{transparent:true,opacity:0.9}), 0, 1.7, d/2+0.15);
+      B(g, new THREE.BoxGeometry(3.5, 5.5, 1.2), mat(SLATE), -w/2+2, 2.75, d/2-3);   // climbing wall corner
+      break;
+    }
+    case 'hangar': {
+      B(g, new THREE.BoxGeometry(w, 7, d), mat(NAVY), 0, 3.5, 0);
+      roofX(g, w+1.2, 4.6, d+1.3, CREAM, 6.9);
+      B(g, new THREE.BoxGeometry(6, 3.8, 1.6), mat(CREAM), 0, 1.9, d/2+0.7);
+      B(g, new THREE.BoxGeometry(5, 2.2, 0.4), mat(RED), 0, 4.6, d/2+1.3);
+      B(g, new THREE.BoxGeometry(3.4, 2.6, 0.3), mat(DARKWOOD), 0, 1.3, d/2+1.6);
+      windows(g, w, 5, d);
+      break;
+    }
+    case 'boathouse': {
+      B(g, new THREE.BoxGeometry(w, 3.6, d), mat(CEDAR), 0, 1.8, 0);
+      roofX(g, w+1, 2.8, d+1.1, GREENROOF, 3.5);
+      B(g, new THREE.BoxGeometry(w*0.55, 2.2, 0.3), mat(0xbfe0ec,{transparent:true,opacity:0.9}), 0, 1.7, d/2+0.12);
+      door(g, -w/3, d);
+      break;
+    }
+    case 'studio': {
+      B(g, new THREE.BoxGeometry(w, 3.4, d), mat(CEDAR), 0, 1.7, 0);
+      B(g, new THREE.BoxGeometry(w+1.2, 0.5, d+1.2), mat(0x3c4d59), 0, 3.6, 0);
+      B(g, new THREE.BoxGeometry(w*0.7, 2.2, 0.3), mat(0xa8d4e4,{transparent:true,opacity:0.88}), 0, 1.5, d/2+0.12);
+      B(g, new THREE.BoxGeometry(1.6, 5, 1.6), mat(SLATE), -w/2+1.4, 2.5, -d/4);
+      const deck = B(g, new THREE.BoxGeometry(w*0.9, 0.4, 3), mat(DARKWOOD), 0, 0.3, d/2+1.8);
+      deck.receiveShadow = true;
+      break;
+    }
+    case 'royal': {
+      B(g, new THREE.BoxGeometry(w, 6.2, d), mat(CREAM), 0, 3.1, 0);
+      roofX(g, w+1.2, 3.4, d+1.2, RED, 6.1);
+      B(g, new THREE.BoxGeometry(w*0.96, 0.4, 2.4), mat(WHITE), 0, 2.9, d/2+1.2);   // veranda
+      for (let i=0;i<=6;i++) B(g, new THREE.BoxGeometry(0.22,2.9,0.22), mat(WHITE), -w/2+ i*(w/6)*0.96, 1.45, d/2+2.2);
+      B(g, new THREE.BoxGeometry(w*0.96, 0.3, 2.6), mat(RED), 0, 3.3, d/2+1.3);
+      windows(g, w, 4.6, d); windows(g, w, 2.1, d);
+      break;
+    }
+    case 'lodgeBig': {
+      B(g, new THREE.BoxGeometry(w, 4.4, d), mat(CEDAR), 0, 2.2, 0);
+      B(g, new THREE.BoxGeometry(w*0.55, 1.8, d*0.6), mat(CEDAR), 0, 5.2, 0);
+      roofX(g, w*0.58, 1.8, d*0.64, GREENROOF, 6.0);
+      roofX(g, w+1.1, 2.6, d+1.1, GREENROOF, 4.3);
+      B(g, new THREE.BoxGeometry(1.4,2.6,1.4), mat(SLATE), w/2-1.6, 6.4, -d/4);
+      windows(g, w, 3, d); door(g, w*0.5, d);
+      break;
+    }
+    case 'ceochalet': {
+      B(g, new THREE.BoxGeometry(w, 4, d), mat(DARKWOOD), 0, 2, 0);
+      roofX(g, w+1, 3, d+1, 0x3c4d59, 3.9);
+      B(g, new THREE.BoxGeometry(w*0.9, 0.35, 2.2), mat(WOOD), 0, 2, d/2+1.1);
+      B(g, new THREE.BoxGeometry(w*0.5, 1.6, 0.25), mat(0xffd98a,{emissive:0xcf9b40,emissiveIntensity:0.4}), 0, 1.6, d/2+0.1);
+      break;
+    }
+    case 'artshed': {
+      B(g, new THREE.BoxGeometry(w, 3, d), mat(RED), 0, 1.5, 0);
+      roofX(g, w+0.9, 2.2, d+1, WHITE, 2.9);
+      B(g, new THREE.BoxGeometry(w*0.5, 1.6, 0.2), mat(0xbfe0ec,{transparent:true,opacity:0.9}), 0, 1.5, d/2+0.1);
+      door(g, -w/4, d, WHITE);
+      break;
+    }
+    case 'office': {
+      B(g, new THREE.BoxGeometry(w, 3.2, d), mat(CREAM), 0, 1.6, 0);
+      roofX(g, w+0.9, 2.4, d+1, NAVY, 3.1);
+      windows(g, w, 2, d); door(g, 0, d);
+      B(g, new THREE.CylinderGeometry(0.08,0.1,6,5), mat(0xcfd6da), w/2+1.5, 3, d/2);
+      B(g, new THREE.BoxGeometry(1.8,1,0.06), mat(RED), w/2+2.4, 5.3, d/2);
+      break;
+    }
+    case 'inn': {
+      B(g, new THREE.BoxGeometry(w, 4.2, d), mat(0xb98c5a), 0, 2.1, 0);
+      roofX(g, w+1, 2.8, d+1, SLATE, 4.1);
+      B(g, new THREE.BoxGeometry(w*0.95, 0.35, 2), mat(DARKWOOD), 0, 1.1, d/2+1);
+      for (let i=0;i<=4;i++) B(g, new THREE.BoxGeometry(0.2,1.9,0.2), mat(DARKWOOD), -w/2+i*(w/4)*0.95, 2, d/2+1.9);
+      B(g, new THREE.BoxGeometry(w*0.95, 0.25, 2.3), mat(SLATE), 0, 3, d/2+1.1);
+      windows(g, w, 3.1, d);
+      break;
+    }
+    case 'barn': {
+      B(g, new THREE.BoxGeometry(w, 3.4, d), mat(0x8a4a32), 0, 1.7, 0);
+      B(g, new THREE.BoxGeometry(w*0.9, 1.4, d*0.9), mat(0x8a4a32), 0, 4, 0);
+      roofX(g, w+0.9, 2, d*0.92, 0xd8d2c2, 4.6);
+      B(g, new THREE.BoxGeometry(2.2,2.4,0.2), mat(WHITE), 0, 1.2, d/2+0.1);
+      break;
+    }
+    case 'parkbarn': {
+      B(g, new THREE.BoxGeometry(w, 6, d), mat(METAL), 0, 3, 0);
+      const r = B(g, new THREE.CylinderGeometry(d/2*1.02, d/2*1.02, w+0.6, 12, 1, false, 0, Math.PI), mat(0xb9bfc3), 0, 5.9, 0);
+      r.rotation.z = Math.PI/2; r.scale.x = 0.38;
+      B(g, new THREE.BoxGeometry(w+0.2, 0.9, d+0.2), mat(0xe8762e), 0, 5.6, 0);
+      B(g, new THREE.BoxGeometry(w*0.4, 3.6, 0.4), mat(0x3d4448,{transparent:true,opacity:0.9}), 0, 1.9, d/2+0.18);
+      break;
+    }
+    case 'parkshed': {
+      B(g, new THREE.BoxGeometry(w, 4, d), mat(0x9aa3a4), 0, 2, 0);
+      roofX(g, w+0.8, 2, d+0.8, SLATE, 3.9);
+      B(g, new THREE.BoxGeometry(w*0.4, 2.8, 0.3), mat(0x3d4448), 0, 1.4, d/2+0.12);
+      break;
+    }
+    case 'western': {
+      const [body, trim] = westernCols[(westernIdx++) % westernCols.length];
+      B(g, new THREE.BoxGeometry(w, 2.6, d), mat(body), 0, 1.3, 0);
+      roofX(g, w+0.6, 1.6, d+0.6, DARKWOOD, 2.5);
+      B(g, new THREE.BoxGeometry(w+0.7, 2, 0.25), mat(body), 0, 2.7, d/2+0.05);    // false front
+      B(g, new THREE.BoxGeometry(w+0.7, 0.35, 0.3), mat(trim), 0, 3.6, d/2+0.08);
+      B(g, new THREE.BoxGeometry(w*0.8, 0.25, 1.4), mat(WOOD), 0, 0.35, d/2+0.8);  // boardwalk
+      B(g, new THREE.BoxGeometry(w*0.85, 0.18, 1.7), mat(DARKWOOD), 0, 1.9, d/2+0.7); // porch roof
+      door(g, 0, d, trim);
+      break;
+    }
+    case 'aframe': {
+      B(g, prismGeo(w+1, Math.max(4, w*0.85), d), mat(CEDAR), 0, 0.1, 0);
+      B(g, prismGeo(w*0.55, Math.max(2.4, w*0.5), 0.3), mat(0x2c3a44), 0, 0.12, d/2+0.05);
+      door(g, 0, d);
+      break;
+    }
+    case 'cabinGreen': case 'cabinNavy': case 'cabinTeal': case 'cabin': {
+      const roofC = s==='cabinGreen' ? GREENROOF : s==='cabinNavy' ? NAVY : s==='cabinTeal' ? TEAL : SLATE;
+      B(g, new THREE.BoxGeometry(w, 2.4, d), mat(0xb98c5a), 0, 1.2, 0);
+      roofX(g, w+0.8, 1.9, d+0.9, roofC, 2.3);
+      door(g, w/4 - w/2, d); windows(g, w, 1.6, d);
+      break;
+    }
+    default: { // lodge
+      B(g, new THREE.BoxGeometry(w, 3.4, d), mat(CEDAR), 0, 1.7, 0);
+      roofX(g, w+0.9, 2.4, d+1, GREENROOF, 3.3);
+      windows(g, w, 2.2, d); door(g, 0, d);
+    }
+  }
+  return g;
+}
+
+const placedById = {};
+const ROT_OVR = { 4:-1.55, 42:0.18 };   // Leadership Studio + Boathouse face the lake
+for (const [id, x, z, w, d, rot] of BLDG){
+  const isOff = (id===33 || id===47 || id===10 || id===38);  // neighbouring cottages / off-camp
+  const g = buildFor(isOff ? -1 : id, w, d);
+  if (isOff) g.traverse(o => { if (o.material) o.castShadow = false; });
+  placeOnGround(g, x, z, ROT_OVR[id] ?? (rot - Math.PI/2));
+  placedById[id] = g;
+}
+// the Village is denser in real life than OSM has mapped — fill in the main street
+for (const [vx,vz,vr] of [[-47,-87,0.6],[-52,-77,1.4],[-38,-71,-2.6],[-35,-86,2.4],[-44,-92,0.2],[-56,-86,1.0]]){
+  const g = buildFor(6, 4.5+rng()*1.5, 4+rng()*1.5);   // style 'western'
+  placeOnGround(g, vx, vz, vr);
+  g.traverse(o => { o.userData.locId = 'village'; });
+}
+// link clusters & singles to legend entries
+const LOC_BLDG = { musichall:[53], dining:[39], heritage:[55], hangar:[21], fieldhouse:[12], boathouse:[42],
+  studio:[4], ceolodge:[17], mac:[11], mainoffice:[58], royal:[1], havington:[30,44], imprint:[40], ian:[2],
+  village:[6,13,41,51], treetops:[14,18,27,32,35,49], timberviews:[24,31,45,57], hillside:[54],
+  chalets:[15,22,29,37,43], woodsend:[5,9,20,36,50,28,56], thepark:[48,8] };
+for (const [locId, ids] of Object.entries(LOC_BLDG))
+  for (const bid of ids) placedById[bid] && placedById[bid].traverse(o => { o.userData.locId = locId; });
+
+/* =====================================================================
+   ACTIVITY AREAS & WATERFRONT
+===================================================================== */
+function boat(color=WHITE){
+  const g = new THREE.Group();
+  const hull = B(g, new THREE.CylinderGeometry(1.05, 0.55, 4.6, 6), mat(color), 0, 0.45, 0);
+  hull.rotation.x = Math.PI/2; hull.scale.set(0.62, 1, 0.5);
+  B(g, new THREE.BoxGeometry(1.15, 0.5, 1.5), mat(NAVY), 0, 0.85, -0.2);
+  B(g, new THREE.BoxGeometry(1.2, 0.34, 0.1), mat(0xbfe0ec, {transparent:true, opacity:0.85}), 0, 1.12, 0.62);
+  return g;
+}
+function canoe(color){
+  const g = new THREE.Group();
+  const c = B(g, new THREE.CylinderGeometry(0.62, 0.4, 4.4, 6), mat(color), 0, 0.3, 0);
+  c.rotation.x = Math.PI/2; c.scale.set(0.42, 1, 0.34);
+  return g;
+}
+function muskokaChair(color){
+  const g = new THREE.Group();
+  const seat = B(g, new THREE.BoxGeometry(0.9,0.12,0.8), mat(color), 0, 0.42, 0); seat.rotation.x = -0.18;
+  const back = B(g, new THREE.BoxGeometry(0.95,1.0,0.1), mat(color), 0, 0.85, -0.42); back.rotation.x = 0.32;
+  for (const s of [-0.42, 0.42]) B(g, new THREE.BoxGeometry(0.1,0.4,0.7), mat(color), s, 0.25, 0.05);
+  return g;
+}
+function zipline(from, to, towerH=9){
+  const a = new THREE.Vector3(from[0], groundY(from[0],from[1]), from[1]);
+  const b = new THREE.Vector3(to[0], groundY(to[0],to[1]), to[1]);
+  for (const [p,hh] of [[a,towerH],[b,2.2]]){
+    const t = new THREE.Group();
+    for (const [sx,sz] of [[-1.3,-1.3],[1.3,-1.3],[-1.3,1.3],[1.3,1.3]])
+      B(t, new THREE.BoxGeometry(0.4, hh, 0.4), mat(DARKWOOD), sx, hh/2, sz);
+    B(t, new THREE.BoxGeometry(3.6, 0.4, 3.6), mat(WOOD), 0, hh, 0);
+    t.position.copy(p); scene.add(t);
+  }
+  const A = a.clone().add(new THREE.Vector3(0,towerH+0.3,0));
+  const Bv = b.clone().add(new THREE.Vector3(0,2.5,0));
+  const len = A.distanceTo(Bv);
+  const cable = B(scene, new THREE.CylinderGeometry(0.06,0.06,len,4), mat(0x8a949b));
+  cable.position.copy(A.clone().add(Bv).multiplyScalar(0.5));
+  cable.lookAt(Bv); cable.rotateX(Math.PI/2); cable.castShadow = false;
+  const rider = new THREE.Group();
+  B(rider, new THREE.BoxGeometry(0.32,0.55,0.32), mat(RED), 0, -0.5, 0);
+  B(rider, new THREE.SphereGeometry(0.22,5,4), mat(0xe7cf9f), 0, -0.05, 0);
+  B(rider, new THREE.CylinderGeometry(0.05,0.05,0.55,4), mat(SLATE), 0, 0.22, 0);
+  scene.add(rider);
+  const phase = rng()*0.8;
+  animated.push({ obj:rider, fn:(t)=>{
+    const k = (t*0.00007 + phase) % 1.3, tt = Math.min(k, 1);
+    const e = tt*tt*(1.7-0.7*tt);
+    rider.position.lerpVectors(A, Bv, e);
+    rider.position.y -= Math.sin(Math.PI*e)*1.6 + 0.35;
+  }});
+}
+
+{ // tennis & pickleball — real court footprints
+  for (let i=0;i<COURTS.length;i++){
+    const [x,z,w,d,rot] = COURTS[i];
+    const g = new THREE.Group();
+    const surf = i<2 ? 0x4f8a87 : 0x35605f;
+    B(g, new THREE.BoxGeometry(w, 0.3, d), mat(0x35605f), 0, 0.15, 0).receiveShadow = true;
+    B(g, new THREE.BoxGeometry(w-2, 0.36, d-2), mat(surf), 0, 0.16, 0);
+    B(g, new THREE.BoxGeometry(w-2.1, 0.42, 0.18), mat(WHITE), 0, 0.18, 0);
+    for (const e of [-(d-2)/2+0.6, (d-2)/2-0.6]) B(g, new THREE.BoxGeometry(w-2.2, 0.06, 0.14), mat(0xdfe6e2), 0, 0.36, e);
+    placeOnGround(g, x, z, rot - Math.PI/2, 0.05);
+    g.traverse(o=>{o.userData.locId='tennis';});
+  }
+  const f = new THREE.Group(); // fence posts around the block
+  for (let i=0;i<10;i++){ B(f, new THREE.BoxGeometry(0.14,2.8,0.14), mat(0x46555f), -10+(i%5)*5, 1.4, i<5?-8:8); }
+  placeOnGround(f, 74, 78, 0.5-Math.PI/2);
+}
+{ // leisure court (basketball / ball hockey)
+  const g = new THREE.Group();
+  B(g, new THREE.BoxGeometry(14, 0.34, 9), mat(0x7d96a8), 0, 0.2, 0).receiveShadow = true;
+  B(g, new THREE.CylinderGeometry(1.5,1.5,0.06,12), mat(0xc9d4dc), 0, 0.41, 0);
+  for (const e of [-6.4, 6.4]){
+    B(g, new THREE.BoxGeometry(0.18, 3.4, 0.18), mat(SLATE), e, 1.7, 0);
+    B(g, new THREE.BoxGeometry(0.1, 1.1, 1.7), mat(WHITE), e + (e>0?-0.3:0.3), 3.1, 0);
+  }
+  placeOnGround(g, 55, 85.5, 0.5, 0.05).traverse(o=>{o.userData.locId='leisure';});
+}
+{ // broomball rink
+  const g = new THREE.Group();
+  B(g, new THREE.BoxGeometry(15, 0.3, 8.5), mat(0xc9d2d6), 0, 0.15, 0).receiveShadow = true;
+  for (const e of [-4.25, 4.25]) B(g, new THREE.BoxGeometry(15.4, 1, 0.3), mat(WHITE), 0, 0.6, e);
+  for (const e of [-7.7, 7.7]) B(g, new THREE.BoxGeometry(0.3, 1, 8.8), mat(WHITE), e, 0.6, 0);
+  placeOnGround(g, 47, 36, 0.25, 0.05).traverse(o=>{o.userData.locId='broomball';});
+}
+{ // playing field
+  const g = new THREE.Group();
+  for (let s=0;s<7;s++) B(g, new THREE.BoxGeometry(44, 0.22, 4.6), mat(s%2 ? 0x6da06b : 0x7cab68), 0, 0.1, -16+s*4.6).receiveShadow = true;
+  for (const e of [-20, 20]) B(g, new THREE.BoxGeometry(0.16,1.6,3.8), mat(WHITE), e, 0.95, 0);
+  placeOnGround(g, 25, 2, -0.45, 0.05).traverse(o=>{o.userData.locId='field';});
+}
+{ // beach volleyball
+  const g = new THREE.Group();
+  for (const dx of [-5.5, 5.5]){
+    B(g, new THREE.BoxGeometry(9.4, 0.3, 6.4), mat(0xe7cf9f), dx, 0.18, 0).receiveShadow = true;
+    B(g, new THREE.BoxGeometry(0.14, 2.4, 0.14), mat(SLATE), dx, 1.2, -3);
+    B(g, new THREE.BoxGeometry(0.14, 2.4, 0.14), mat(SLATE), dx, 1.2, 3);
+    B(g, new THREE.BoxGeometry(0.06, 0.8, 6), mat(WHITE, {transparent:true, opacity:0.8}), dx, 1.85, 0);
+  }
+  placeOnGround(g, -65, 38, 0.9, 0.05).traverse(o=>{o.userData.locId='vball';});
+}
+{ // driving range + disc golf
+  const g = new THREE.Group();
+  B(g, new THREE.BoxGeometry(10, 0.3, 4), mat(0x79a865), 0, 0.2, 0).receiveShadow = true;
+  for (const px of [-4.5, 0, 4.5]) B(g, new THREE.BoxGeometry(0.16, 4.4, 0.16), mat(SLATE), px, 2.2, -2.4);
+  B(g, new THREE.BoxGeometry(9.4, 4.2, 0.1), mat(0xdde6ea, {transparent:true, opacity:0.3}), 0, 2.3, -2.4);
+  for (let i=0;i<3;i++) B(g, new THREE.BoxGeometry(1.4,0.12,1), mat(0x4f8a5d), -3+i*3, 0.42, 1.2);
+  placeOnGround(g, -225, -15, 2.1, 0.05).traverse(o=>{o.userData.locId='range';});
+  for (const [bx,bz] of [[-196,22],[-184,38],[-172,28]]){
+    const k = new THREE.Group();
+    B(k, new THREE.CylinderGeometry(0.07,0.09,2.6,5), mat(SLATE), 0, 1.3, 0);
+    B(k, new THREE.CylinderGeometry(0.8,0.8,0.7,8,1,true), mat(0xcfd6da,{side:THREE.DoubleSide}), 0, 1.6, 0);
+    B(k, new THREE.CylinderGeometry(0.55,0.55,0.1,8), mat(SLATE), 0, 2.6, 0);
+    placeOnGround(k, bx, bz, 0).traverse(o=>{o.userData.locId='discgolf';});
+  }
+}
+{ // the Park — skate terrain around the pump-track barn
+  const g = new THREE.Group();
+  B(g, new THREE.BoxGeometry(34, 0.6, 24), mat(0xb9bcb6), 0, 0.3, 0).receiveShadow = true;
+  for (const [bx,bz,r] of [[-9,5,3.8],[3,8,3]]) B(g, new THREE.CylinderGeometry(r, r*0.8, 0.5, 12), mat(0x9ea29c), bx, 0.56, bz);
+  for (const [px,pz,ry] of [[-14,-5,Math.PI/2],[13,9,-Math.PI/2],[7,-7,Math.PI]]){
+    const q = B(g, prismGeo(6, 2.2, 3), mat(0xa8aba5), px, 0.6, pz); q.rotation.y = ry;
+  }
+  B(g, new THREE.BoxGeometry(5, 0.9, 2.2), mat(0xa8aba5), -3, 1.05, -4);
+  for (const [rx,rz,ry] of [[4,2,0.4],[-4,9,-0.3]]){
+    const rail = B(g, new THREE.BoxGeometry(0.16, 0.5, 5), mat(0x6f7d86), rx, 0.85, rz); rail.rotation.y = ry;
+  }
+  placeOnGround(g, -243, -155, -0.84, 0.05).traverse(o=>{o.userData.locId='thepark';});
+}
+{ // archery (the Park) + archery tag (Fieldhouse)
+  const g = new THREE.Group();
+  for (let i=0;i<3;i++){
+    const x = -4+i*4, t = new THREE.Group();
+    B(t, new THREE.CylinderGeometry(1.05,1.05,0.3,10), mat(WHITE), 0,0,0);
+    B(t, new THREE.CylinderGeometry(0.7,0.7,0.34,10), mat(RED), 0,0,0);
+    B(t, new THREE.CylinderGeometry(0.32,0.32,0.38,10), mat(0xf4d35e), 0,0,0);
+    t.rotation.x = Math.PI/2 - 0.12; t.position.set(x, 1.3, -4.5);
+    g.add(t);
+  }
+  B(g, new THREE.BoxGeometry(11, 0.2, 1.6), mat(GRAVEL), 0, 0.12, 3.5);
+  placeOnGround(g, -226, -150, -0.8, 0.05).traverse(o=>{o.userData.locId='archery';});
+  const tg = new THREE.Group();
+  const bunkerCols = [0xe8a33d, 0x5eb6d9, 0xc24d2e, 0x7fc96b];
+  for (let i=0;i<5;i++) B(tg, new THREE.SphereGeometry(0.8,6,5), mat(bunkerCols[i%4]), -4+i*2, 0.5, (i%2?1.6:-1.6)).scale.y = 0.8;
+  B(tg, new THREE.BoxGeometry(0.06, 1.6, 8), mat(WHITE,{transparent:true,opacity:0.5}), 0, 1.1, 0);
+  placeOnGround(tg, 126, 44, 0.6, 0.05).traverse(o=>{o.userData.locId='archerytag';});
+}
+zipline([-100,-42], [-235,-85], 10);   // upper — 1,000 ft over the west meadow
+zipline([68,92], [18,126], 8);          // lower
+{ // high ropes
+  const g = new THREE.Group();
+  const poles = [[-5,-3.5],[0,-5],[5,-3.5],[-5,3],[0,4.5],[5,3],[0,-0.3]];
+  for (const [px,pz] of poles) B(g, new THREE.CylinderGeometry(0.28,0.36,11,6), mat(DARKWOOD), px, 5.5, pz);
+  const beams = [[0,1],[1,2],[3,4],[4,5],[0,3],[2,5],[1,6],[4,6],[6,2],[6,0]];
+  for (const [a,b] of beams){
+    const [ax,az]=poles[a],[bx,bz]=poles[b], len=Math.hypot(bx-ax,bz-az);
+    const beam = B(g, new THREE.BoxGeometry(0.2,0.2,len), mat(WOOD), (ax+bx)/2, 9.4, (az+bz)/2);
+    beam.rotation.y = Math.atan2(bx-ax, bz-az);
+    const wire = B(g, new THREE.BoxGeometry(0.05,0.05,len), mat(0xcfd6da), (ax+bx)/2, 10.4, (az+bz)/2);
+    wire.rotation.y = beam.rotation.y; wire.castShadow = false;
+  }
+  B(g, new THREE.BoxGeometry(2.4,0.3,2.4), mat(WOOD), 0, 9.2, -0.3);
+  placeOnGround(g, 84, 102, 0.3).traverse(o=>{o.userData.locId='highropes';});
+}
+{ // low ropes
+  const g = new THREE.Group();
+  const pts = [[-6,0],[-2,-2],[2,1],[6,-1],[9,2]];
+  for (let i=0;i<pts.length;i++){
+    B(g, new THREE.CylinderGeometry(0.22,0.28,2.2,6), mat(DARKWOOD), pts[i][0], 1.1, pts[i][1]);
+    if (i>0){
+      const [ax,az]=pts[i-1],[bx,bz]=pts[i], len=Math.hypot(bx-ax,bz-az);
+      const w = B(g, new THREE.BoxGeometry(0.07,0.07,len), mat(0xcfd6da), (ax+bx)/2, 1.7, (az+bz)/2);
+      w.rotation.y = Math.atan2(bx-ax,bz-az); w.castShadow = false;
+      const plank = B(g, new THREE.BoxGeometry(0.5,0.12,len*0.8), mat(WOOD), (ax+bx)/2, 0.5, (az+bz)/2);
+      plank.rotation.y = w.rotation.y;
+    }
+  }
+  placeOnGround(g, -170, -120, 0.4).traverse(o=>{o.userData.locId='lowropes';});
+}
+{ // giant swing — animated pendulum
+  const g = new THREE.Group();
+  const H = 11;
+  for (const s of [-4.5, 4.5]){
+    const leg1 = B(g, new THREE.CylinderGeometry(0.22,0.3,H+1,6), mat(DARKWOOD), s, H/2, -1.6); leg1.rotation.x = 0.14;
+    const leg2 = B(g, new THREE.CylinderGeometry(0.22,0.3,H+1,6), mat(DARKWOOD), s, H/2, 1.6);  leg2.rotation.x = -0.14;
+  }
+  B(g, new THREE.BoxGeometry(9.6,0.35,0.35), mat(WOOD), 0, H, 0);
+  const arm = new THREE.Group();
+  B(arm, new THREE.CylinderGeometry(0.05,0.05,H-2.2,4), mat(0xcfd6da), 0, -(H-2.2)/2, 0).castShadow = false;
+  const seat = B(arm, new THREE.BoxGeometry(1.5,0.5,0.8), mat(RED), 0, -(H-2.2), 0);
+  B(arm, new THREE.SphereGeometry(0.22,5,4), mat(0xe7cf9f), 0, -(H-2.6), 0);
+  arm.position.y = H;
+  g.add(arm);
+  animated.push({ obj:arm, fn:(t)=>{ arm.rotation.x = Math.sin(t*0.0014)*0.85; } });
+  placeOnGround(g, -75, -3, 1.2).traverse(o=>{o.userData.locId='giantswing';});
+}
+{ // main campfire pit
+  const g = new THREE.Group();
+  for (let i=0;i<9;i++){ const a=i/9*Math.PI*2; B(g, new THREE.DodecahedronGeometry(0.5,0), mat(0x9aa3a4), Math.cos(a)*2, 0.3, Math.sin(a)*2); }
+  const fire = B(g, new THREE.ConeGeometry(0.8, 1.6, 5), mat(0xff8c42, {emissive:0xff6b1a, emissiveIntensity:1.6}), 0, 0.9, 0);
+  animated.push({ obj:fire, fn:(t)=>{ fire.scale.setScalar(0.85 + Math.sin(t*0.011)*0.15); fire.rotation.y = t*0.004; } });
+  for (let i=0;i<5;i++){ const a=i/5*Math.PI*2+0.4; const log = B(g, new THREE.CylinderGeometry(0.26,0.26,2.6,5), mat(0x6b4a32), Math.cos(a)*3.6, 0.3, Math.sin(a)*3.6); log.rotation.z=Math.PI/2; log.rotation.y=a; }
+  placeOnGround(g, -12, 57, 0);
+}
+{ // KrakenRACER — 6 lanes down to the splash pool
+  const g = new THREE.Group();
+  const top = [27, 28], bot = [20, 50], gy0 = groundY(...top);
+  const tower = new THREE.Group();
+  for (const [sx,sz] of [[-2.6,-1.4],[2.6,-1.4],[-2.6,1.4],[2.6,1.4]]) B(tower, new THREE.BoxGeometry(0.4,6,0.4), mat(DARKWOOD), sx, 3, sz);
+  B(tower, new THREE.BoxGeometry(6.4, 0.5, 3.6), mat(TEAL), 0, 6, 0);
+  B(tower, prismGeo(7, 1.8, 4.2), mat(0xf4d35e), 0, 6.4, 0);
+  g.add(tower);
+  const laneCols = [0x2b7ea1, 0xf4d35e, 0xc24d2e, 0x7fc96b, 0x5eb6d9, 0xe8a33d];
+  for (let l=0;l<6;l++){
+    const off = (l-2.5)*1.0, SEG = 6;
+    for (let s=0;s<SEG;s++){
+      const t0=s/SEG, t1=(s+1)/SEG;
+      const ax = top[0]+(bot[0]-top[0])*t0 + off, az = top[1]+(bot[1]-top[1])*t0;
+      const bx = top[0]+(bot[0]-top[0])*t1 + off, bz = top[1]+(bot[1]-top[1])*t1;
+      const ay = (s===0 ? gy0+6 : groundY(ax,az)+0.9), by = (s===SEG-1 ? groundY(bx,bz)+0.5 : groundY(bx,bz)+0.9);
+      const mx=(ax+bx)/2, mz=(az+bz)/2, len=Math.hypot(bx-ax, bz-az, by-ay);
+      const seg = B(g, new THREE.BoxGeometry(0.9, 0.4, len+0.4), mat(laneCols[l]), mx-top[0], (ay+by)/2 - gy0, mz-top[1]);
+      seg.rotation.y = Math.atan2(bx-ax, bz-az);
+      seg.rotation.x = -Math.asin((by-ay)/len);
+    }
+  }
+  B(g, new THREE.CylinderGeometry(5,5,0.5,10), mat(0x9fdbe8,{transparent:true,opacity:0.95}), bot[0]-top[0], groundY(...bot)+0.45-gy0, bot[1]-top[1]+2).receiveShadow = true;
+  placeOnGround(g, top[0], top[1], 0).traverse(o=>{o.userData.locId='kraken';});
+}
+{ // swim beach
+  const g = new THREE.Group();
+  const cols = [RED, TEAL, 0xe8a33d, 0x7d9c84, NAVY];
+  for (let i=0;i<5;i++){
+    const ch = muskokaChair(cols[i]);
+    ch.position.set(-5+i*2.6 + (rng()*1-0.5), 0.4, (rng()*2-1));
+    ch.rotation.y = -2.2 + (rng()*0.5-0.25);
+    g.add(ch);
+  }
+  for (const [x,z] of [[-6,3],[4,4]]){
+    B(g, new THREE.CylinderGeometry(0.08,0.1,3,5), mat(WHITE), x, 1.9, z);
+    B(g, new THREE.ConeGeometry(2.1,1.1,8), mat(RED), x, 3.3, z).rotation.x = 0.1;
+  }
+  B(g, new THREE.BoxGeometry(1.3,0.16,1.3), mat(WHITE), 8, 2.8, 1);
+  for (const s of [[-0.5,-0.5],[0.5,-0.5],[-0.5,0.5],[0.5,0.5]]) B(g, new THREE.BoxGeometry(0.13,2.8,0.13), mat(WHITE), 8+s[0], 1.4, 1+s[1]);
+  const rack = new THREE.Group();
+  [[0,RED],[1,0xe8a33d],[2,TEAL]].forEach(([i,c]) => { const k = canoe(c); k.position.set(0, i*0.7, 0); rack.add(k); });
+  rack.position.set(11, 0.4, -2); rack.rotation.y = 0.8; g.add(rack);
+  placeOnGround(g, -73.5, 91, -1.35, 0).traverse(o=>{o.userData.locId='beach';});
+  // buoy line in the cove
+  for (let i=0;i<=7;i++){
+    const a = 1.7 + i/7*1.9;
+    const bx = -80 + Math.cos(a)*9, bz = 92 + Math.sin(a)*10;
+    const buoy = B(scene, new THREE.SphereGeometry(0.32,5,4), mat(i%2?WHITE:RED), bx, -0.1, bz);
+    buoy.castShadow = false;
+  }
+}
+{ // main pier (real OSM geometry) + boats
+  for (let i=0;i<PIER.length-1;i++){
+    const [ax,az]=PIER[i], [bx,bz]=PIER[i+1], len=Math.hypot(bx-ax,bz-az);
+    const dock = B(scene, new THREE.BoxGeometry(2.4, 0.35, len+1.4), mat(WOOD), (ax+bx)/2, 0.6, (az+bz)/2);
+    dock.rotation.y = Math.atan2(bx-ax, bz-az);
+    dock.userData.locId = 'docks';
+    for (let k=0;k<=len;k+=3){
+      const t=k/len;
+      B(scene, new THREE.BoxGeometry(0.26,1.0,0.26), mat(DARKWOOD), ax+(bx-ax)*t+0.9, 0.0, az+(bz-az)*t).userData.locId='docks';
+    }
+  }
+  const b1 = boat(WHITE); b1.position.set(-99, 0.05, 117); b1.rotation.y = 0.7; scene.add(b1);
+  const b2 = boat(0xe8a33d); b2.position.set(-92, 0.05, 119); b2.rotation.y = -2.2; scene.add(b2);
+  [b1,b2].forEach((bb,i)=>animated.push({ obj:bb, fn:(t)=>{ bb.position.y = 0.05+Math.sin(t*0.0011+i*2)*0.08; bb.rotation.z = Math.sin(t*0.0009+i)*0.03; } }));
+  // boathouse dock
+  const bd = B(scene, new THREE.BoxGeometry(3, 0.35, 9), mat(WOOD), 3, 0.55, 184);
+  bd.rotation.y = 0.15; bd.userData.locId='boathouse';
+  const k = canoe(RED); k.position.set(6.5, 0, 186); k.rotation.y = 1.8; scene.add(k);
+}
+{ // wibit + lake life
+  const g = new THREE.Group();
+  const cols = [0xf4d35e, 0x7fc96b, 0xf4d35e, 0x5eb6d9, 0x7fc96b];
+  const parts = [[0,0,4.5,2.2],[5,0.8,3.6,1.8],[9,-0.8,4,2.4],[13,0.4,3.2,1.8],[16.6,-0.4,3.8,2.2]];
+  parts.forEach(([x,z,w,d],i)=>{
+    B(g, new THREE.BoxGeometry(w,1,d), mat(cols[i]), x-8, 0.4, z);
+    if (i===2){ const s = B(g, prismGeo(3.2, 2.4, 2.2), mat(0x5eb6d9), x-8, 0.8, z); s.rotation.y = Math.PI/2; }
+    if (i===4) B(g, new THREE.CylinderGeometry(0.9,1.15,2,6), mat(0xf4d35e), x-8, 1.4, z);
+  });
+  g.position.set(-108, 0, 94); g.rotation.y = 0.9;
+  scene.add(g);
+  g.traverse(o=>{o.userData.locId='wibit';});
+  animated.push({ obj:g, fn:(t)=>{ g.position.y = Math.sin(t*0.0012)*0.16; g.rotation.z = Math.sin(t*0.0009)*0.012; } });
+  const ski = boat(WHITE); scene.add(ski);
+  animated.push({ obj:ski, fn:(t)=>{
+    const a = t*0.00026;
+    ski.position.set(-150 + Math.cos(a)*42, 0.1, 160 + Math.sin(a)*38);
+    ski.rotation.y = -a + Math.PI/2 + 0.2*Math.sin(a*2);
+  }});
+  const sail = new THREE.Group();
+  const hull = B(sail, new THREE.CylinderGeometry(1, 0.5, 5, 6), mat(0xead9b6), 0, 0.4, 0);
+  hull.rotation.x = Math.PI/2; hull.scale.set(0.5, 1, 0.45);
+  B(sail, new THREE.CylinderGeometry(0.06,0.08,6,4), mat(DARKWOOD), 0, 3.2, 0);
+  B(sail, prismGeo(2.6, 4.6, 0.05), mat(WHITE), 1.0, 1.4, 0).rotation.y = Math.PI/2;
+  sail.position.set(-190, 0, 200); sail.rotation.y = -0.7; scene.add(sail);
+  animated.push({ obj:sail, fn:(t)=>{ sail.rotation.z = Math.sin(t*0.0008)*0.05; sail.position.y = Math.sin(t*0.001+2)*0.12; } });
+  for (const [kx,kz,c] of [[-120,120,0xe8a33d],[-128,112,RED]]){
+    const ka = canoe(c); ka.position.set(kx, -0.05, kz); ka.rotation.y = rng()*3; scene.add(ka);
+    animated.push({ obj:ka, fn:(t)=>{ ka.position.y = -0.05 + Math.sin(t*0.0012+kx)*0.1; } });
+  }
+}
+{ // backyard stage on the lawn NE of the Hangar
+  const g = new THREE.Group();
+  B(g, new THREE.BoxGeometry(7, 1, 4.2), mat(DARKWOOD), 0, 0.55, 0);
+  B(g, new THREE.BoxGeometry(7.4, 4.2, 0.5), mat(NAVY), 0, 2.4, -2);
+  B(g, new THREE.BoxGeometry(7.6, 0.5, 4.6), mat(0x27516f), 0, 4.4, -0.2);
+  for (const s of [-3.5, 3.5]) B(g, new THREE.BoxGeometry(0.3,4.2,0.3), mat(DARKWOOD), s, 2.2, 1.6);
+  placeOnGround(g, 16, 74, 2.6).traverse(o=>{o.userData.locId='backyard';});
+}
+{ // base camp trailhead
+  const g = new THREE.Group();
+  B(g, new THREE.BoxGeometry(0.2,2.4,0.2), mat(DARKWOOD), 0, 1.2, 0);
+  B(g, new THREE.BoxGeometry(2.6,1,0.14), mat(WOOD), 0, 2.1, 0);
+  placeOnGround(g, 122, -74, 0.5).traverse(o=>{o.userData.locId='basecamp';});
+}
+
+/* =====================================================================
+   PINS, PICKING & UI
+===================================================================== */
+const PIN_H = { musichall:13, hangar:11, fieldhouse:11, heritage:9.5, royal:10, kraken:10,
+  highropes:14.5, giantswing:14.5, upperzip:13, lowerzip:11, thepark:10, boathouse:8.5,
+  wibit:6, docks:6.5, beach:6.5, vball:6, field:7, tennis:7, leisure:6.5, broomball:6.5,
+  range:7, discgolf:6, archery:6.5, archerytag:6.5, lowropes:7, basecamp:7.5 };
+const pins = [], pickables = [];
+for (const loc of LOCATIONS){
+  const gdef = GROUPS[loc.group];
+  const [x,z] = loc.pos;
+  const baseY = groundY(x,z);
+  const h = PIN_H[loc.id] ?? 8.5;
+  const pin = new THREE.Group();
+  const head = new THREE.Group();
+  const cone = B(head, new THREE.ConeGeometry(0.95, 1.9, 6), mat(0xfbf6ea), 0, 0, 0);
+  cone.rotation.x = Math.PI;
+  B(head, new THREE.SphereGeometry(0.7, 8, 6), mat(gdef.color), 0, 1.35, 0);
+  B(head, new THREE.SphereGeometry(0.24, 6, 4), mat(0xfbf6ea), 0, 1.35, 0.54);
+  head.position.y = h;
+  pin.add(head);
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(3, 6, 5), new THREE.MeshBasicMaterial({ visible:false }));
+  hit.position.y = h + 0.9;
+  pin.add(hit);
+  pin.position.set(x, baseY, z);
+  pin.userData = { loc, head, baseY, phase: rng()*6.28 };
+  scene.add(pin);
+  pins.push(pin);
+  hit.userData.locId = loc.id;
+  pickables.push(hit);
+}
+for (const g of Object.values(placedById)) pickables.push(g);
+
+const tip = document.getElementById('tip');
+const card = document.getElementById('card');
+const byId = id => LOCATIONS.find(l => l.id === id);
+let selectedId = null, hoverId = null;
+
+const legendList = document.getElementById('legendList');
+const order = ['venues','waterfront','stay','sports','adventure'];
+for (const gk of order){
+  const wrap = document.createElement('div');
+  wrap.className = 'group';
+  wrap.innerHTML = `<div class="gtitle">${GROUPS[gk].label}</div>`;
+  for (const loc of LOCATIONS.filter(l => l.group === gk)){
+    const btn = document.createElement('button');
+    btn.className = 'loc';
+    btn.dataset.id = loc.id;
+    btn.innerHTML = `<span class="dot" style="background:${GROUPS[gk].css}"></span>
+      <span class="txt">${loc.name}<small>${loc.stat[0]} ${loc.stat[1]}</small></span>`;
+    btn.addEventListener('click', () => { select(loc.id); if (innerWidth < 880) legend.classList.remove('open'); });
+    btn.addEventListener('mouseenter', () => hoverId = loc.id);
+    btn.addEventListener('mouseleave', () => { if (hoverId === loc.id) hoverId = null; });
+    wrap.appendChild(btn);
+  }
+  legendList.appendChild(wrap);
+}
+document.getElementById('locCount').textContent = LOCATIONS.length;
+const legend = document.getElementById('legend');
+document.getElementById('toggleLegend').addEventListener('click', () => legend.classList.add('open'));
+
+function select(id){
+  const loc = byId(id);
+  if (!loc) return;
+  selectedId = id;
+  controls.autoRotate = false;
+  document.querySelectorAll('.loc').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+  const g = GROUPS[loc.group];
+  document.getElementById('cardCat').textContent = g.label;
+  document.getElementById('cardCat').style.background = g.css;
+  document.getElementById('cardName').textContent = loc.name;
+  document.getElementById('cardBlurb').textContent = loc.blurb;
+  document.getElementById('cardStat').innerHTML = `<b>${loc.stat[0]}</b><span>${loc.stat[1]}</span>`;
+  card.classList.add('show');
+  flyTo(loc);
+  try { parent.postMessage({ type: 'mw-map-select', id: loc.id, name: loc.name }, '*'); } catch (e) {}
+}
+document.getElementById('cardClose').addEventListener('click', () => {
+  card.classList.remove('show'); selectedId = null;
+  document.querySelectorAll('.loc').forEach(b => b.classList.remove('active'));
+});
+
+function locSize(loc){
+  let m = 8;
+  for (const bid of (LOC_BLDG[loc.id] || [])){
+    const e = BLDG.find(b => b[0] === bid);
+    if (e) m = Math.max(m, e[3], e[4]);
+  }
+  return m;
+}
+function flyTo(loc){
+  const [x,z] = loc.pos;
+  const size = locSize(loc), ph = PIN_H[loc.id] ?? 8.5;
+  const tgt = new THREE.Vector3(x, groundY(x,z)+2.5+size*0.12, z);
+  const out = new THREE.Vector3((x+55)*0.25, 0, 130).normalize();   // view from the south (lake side)
+  const dist = 24 + ph*1.0 + size*1.5;
+  const camTo = tgt.clone().add(out.multiplyScalar(dist)).add(new THREE.Vector3(0, 11 + ph*0.5 + size*0.45, 0));
+  const camFrom = camera.position.clone(), tgtFrom = controls.target.clone();
+  tween(1500, t => {
+    camera.position.lerpVectors(camFrom, camTo, t);
+    controls.target.lerpVectors(tgtFrom, tgt, t);
+  });
+}
+
+const ray = new THREE.Raycaster();
+const ptr = new THREE.Vector2();
+let downAt = null;
+function findLocId(o){ while (o){ if (o.userData?.locId) return o.userData.locId; o = o.parent; } return null; }
+function pick(e){
+  ptr.set((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
+  ray.setFromCamera(ptr, camera);
+  const hits = ray.intersectObjects(pickables, true);
+  return hits.length ? findLocId(hits[0].object) : null;
+}
+canvas.addEventListener('pointermove', e => {
+  if (downAt) return;
+  const id = pick(e);
+  canvas.classList.toggle('pointing', !!id);
+  if (id){
+    const loc = byId(id);
+    if (loc){
+      tip.textContent = loc.name;
+      tip.style.left = e.clientX + 'px';
+      tip.style.top = e.clientY + 'px';
+      tip.classList.add('show');
+      hoverId = id;
+    }
+  } else { tip.classList.remove('show'); hoverId = null; }
+});
+canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; tip.classList.remove('show'); });
+canvas.addEventListener('pointerup', e => {
+  if (downAt && Math.hypot(e.clientX-downAt[0], e.clientY-downAt[1]) < 6){
+    const id = pick(e);
+    if (id) select(id);
+  }
+  downAt = null;
+});
+
+/* =====================================================================
+   ANIMATE
+===================================================================== */
+const wp = waterGeo.attributes.position;
+function animate(now){
+  requestAnimationFrame(animate);
+  stepTweens(now);
+  controls.update();
+  for (let i=0;i<wp.count;i++){
+    const x = waterBase[i*3], z = waterBase[i*3+2];
+    wp.setY(i, Math.sin(x*0.1 + now*0.0012)*0.16 + Math.cos(z*0.085 + now*0.00085)*0.14);
+  }
+  wp.needsUpdate = true;
+  for (const c of clouds.children){
+    c.position.x += c.userData.speed * 0.02;
+    if (c.position.x > 460) c.position.x = -460;
+  }
+  for (const pin of pins){
+    const { loc, head, phase } = pin.userData;
+    head.position.y = (PIN_H[loc.id] ?? 8.5) + Math.sin(now*0.0016 + phase)*0.5;
+    head.rotation.y = now*0.0008 + phase;
+    const target = (loc.id === hoverId || loc.id === selectedId) ? 1.6 : 1;
+    head.scale.lerp(new THREE.Vector3(target,target,target), 0.12);
+  }
+  for (const a of animated) a.fn(now);
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(animate);
+
+tween(2600, t => {
+  camera.position.lerpVectors(new THREE.Vector3(-180,290,520), new THREE.Vector3(-100,150,330), t);
+});
+setTimeout(() => document.getElementById('loader').classList.add('done'), 900);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+// headless-capture hooks (used for automated visual checks; harmless in normal use)
+window.__mw = { select, camera, controls, stepTweens };
+window.__mwShot = (w=1100, h=680) => {
+  stepTweens(performance.now() + 60000);          // finish any camera tween
+  controls.update();                              // apply orientation (rAF may be throttled)
+  renderer.setSize(w, h, false);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  const url = renderer.domElement.toDataURL('image/jpeg', 0.72);
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  return url;
+};
+</script>
+</body>
+</html>

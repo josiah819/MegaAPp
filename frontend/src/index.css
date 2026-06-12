@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   WoodsOS design tokens — straight from muskokabranding.com
+   Daybreak (light) and Night Paddle (dark) themes.
+   Triplets feed Tailwind's rgb(var()/alpha) colors.
+   ============================================================ */
+:root {
+  --c-bg: 247 243 234;          /* cream */
+  --c-surface: 252 250 244;     /* warm white */
+  --c-sunken: 238 232 219;
+  --c-line: 224 216 198;
+  --c-ink: 19 59 64;            /* deep mw ink */
+  --c-dim: 93 118 114;
+  --c-faint: 142 160 154;
+  --c-brand: 30 90 100;         /* Muskoka Blue  #1E5A64 */
+  --c-brand-deep: 27 72 73;     /* Blue Dark     #1B4849 */
+  --c-accent: 31 99 49;         /* page accent (defaults to Green Dark) */
+  --c-green: 163 205 66;        /* Muskoka Green #A3CD42 */
+  --c-green-dark: 31 99 49;     /* Green Dark    #1F6331 */
+  --c-summer: 48 161 89;        /* Summer Camp   #30A059 */
+  --c-ember: 194 102 40;        /* Schools&Groups#C26628 */
+  --c-lake: 16 135 163;         /* Alumni        #1087A3 */
+  --c-leadership: 27 84 111;    /* Leadership    #1B5470 */
+  --c-danger: 178 64 46;
+  --c-panel: 16 51 58;          /* sidebar deep teal */
+  --c-panel-ink: 234 244 240;
+
+  /* iPhone notch / home-indicator insets */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+[data-theme='dark'] {
+  --c-bg: 10 27 30;
+  --c-surface: 17 40 44;
+  --c-sunken: 12 32 35;
+  --c-line: 38 66 72;
+  --c-ink: 234 244 240;
+  --c-dim: 156 184 178;
+  --c-faint: 108 136 132;
+  --c-brand: 73 152 164;
+  --c-brand-deep: 50 116 126;
+  --c-accent: 109 178 134;
+  --c-green: 163 205 66;
+  --c-green-dark: 109 178 134;
+  --c-summer: 70 186 112;
+  --c-ember: 224 138 76;
+  --c-lake: 60 173 198;
+  --c-leadership: 96 158 190;
+  --c-danger: 226 96 60;
+  --c-panel: 8 22 25;
+  --c-panel-ink: 234 244 240;
+}
+
+/* Module accents (brand sub-palette). Dark theme brightens for contrast. */
+.acc-blue   { --c-accent: 30 90 100; }
+.acc-green  { --c-accent: 31 99 49; }
+.acc-bright { --c-accent: 124 164 28; }
+.acc-summer { --c-accent: 48 161 89; }
+.acc-ember  { --c-accent: 194 102 40; }
+.acc-lake   { --c-accent: 16 135 163; }
+.acc-lead   { --c-accent: 27 84 111; }
+[data-theme='dark'] .acc-blue   { --c-accent: 73 152 164; }
+[data-theme='dark'] .acc-green  { --c-accent: 109 178 134; }
+[data-theme='dark'] .acc-bright { --c-accent: 163 205 66; }
+[data-theme='dark'] .acc-summer { --c-accent: 70 186 112; }
+[data-theme='dark'] .acc-ember  { --c-accent: 224 138 76; }
+[data-theme='dark'] .acc-lake   { --c-accent: 60 173 198; }
+[data-theme='dark'] .acc-lead   { --c-accent: 96 158 190; }
+
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body {
+  @apply bg-bg text-ink font-sans text-[14px];
+  -webkit-tap-highlight-color: transparent;
+}
+* { border-color: rgb(var(--c-line)); }
+
+/* full-height that tracks the iOS dynamic toolbar */
+.h-screen-dyn { height: 100vh; }
+.min-h-screen-dyn { min-height: 100vh; }
+@supports (height: 100dvh) {
+  .h-screen-dyn { height: 100dvh; }
+  .min-h-screen-dyn { min-height: 100dvh; }
+}
+
+/* ----- signature textures ----- */
+.bg-topo {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='560' viewBox='0 0 560 560'%3E%3Cg fill='none' stroke='%23A3CD42' stroke-opacity='0.08' stroke-width='1.4'%3E%3Cpath d='M-20 80 Q120 20 240 90 T560 70'/%3E%3Cpath d='M-20 130 Q140 60 260 140 T580 120'/%3E%3Cpath d='M-20 185 Q150 110 270 195 T580 175'/%3E%3Cpath d='M-20 250 Q160 170 280 255 T580 235'/%3E%3Cpath d='M-20 320 Q150 240 290 320 T580 305'/%3E%3Cpath d='M-20 390 Q170 310 300 390 T580 375'/%3E%3Cpath d='M-20 455 Q160 385 290 460 T580 445'/%3E%3Cpath d='M-20 520 Q180 450 310 520 T580 505'/%3E%3Ccircle cx='430' cy='120' r='28'/%3E%3Ccircle cx='430' cy='120' r='52'/%3E%3Ccircle cx='430' cy='120' r='80'/%3E%3Ccircle cx='110' cy='400' r='24'/%3E%3Ccircle cx='110' cy='400' r='46'/%3E%3C/g%3E%3C/svg%3E");
+}
+.bg-topo-ink {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='560' viewBox='0 0 560 560'%3E%3Cg fill='none' stroke='%231E5A64' stroke-opacity='0.05' stroke-width='1.4'%3E%3Cpath d='M-20 80 Q120 20 240 90 T560 70'/%3E%3Cpath d='M-20 130 Q140 60 260 140 T580 120'/%3E%3Cpath d='M-20 185 Q150 110 270 195 T580 175'/%3E%3Cpath d='M-20 250 Q160 170 280 255 T580 235'/%3E%3Cpath d='M-20 320 Q150 240 290 320 T580 305'/%3E%3Cpath d='M-20 390 Q170 310 300 390 T580 375'/%3E%3Ccircle cx='430' cy='120' r='28'/%3E%3Ccircle cx='430' cy='120' r='52'/%3E%3Ccircle cx='430' cy='120' r='80'/%3E%3C/g%3E%3C/svg%3E");
+}
+[data-theme='dark'] .bg-topo-ink {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='560' viewBox='0 0 560 560'%3E%3Cg fill='none' stroke='%23A3CD42' stroke-opacity='0.05' stroke-width='1.4'%3E%3Cpath d='M-20 80 Q120 20 240 90 T560 70'/%3E%3Cpath d='M-20 130 Q140 60 260 140 T580 120'/%3E%3Cpath d='M-20 185 Q150 110 270 195 T580 175'/%3E%3Cpath d='M-20 250 Q160 170 280 255 T580 235'/%3E%3Cpath d='M-20 320 Q150 240 290 320 T580 305'/%3E%3Cpath d='M-20 390 Q170 310 300 390 T580 375'/%3E%3Ccircle cx='430' cy='120' r='28'/%3E%3Ccircle cx='430' cy='120' r='52'/%3E%3Ccircle cx='430' cy='120' r='80'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* film grain, very quiet */
+.grain { position: relative; }
+.grain::after {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 80;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* ----- type voice ----- */
+.disp { @apply font-display uppercase; letter-spacing: 0.015em; line-height: 0.94; }
+.kicker { @apply font-head text-[11px] font-bold uppercase; letter-spacing: 0.24em; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ----- surfaces ----- */
+.card { @apply bg-surface rounded-2xl border border-line/80 shadow-soft; }
+.input {
+  @apply w-full rounded-xl border border-line bg-surface px-3 py-2 text-[14px] font-medium text-ink
+    placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-green/70 focus:border-brand transition;
+}
+select.input { @apply pr-8; }
+textarea.input { @apply leading-relaxed; }
+.label { @apply block kicker text-dim mb-1.5; }
+
+/* ----- tables ----- */
+.tbl { @apply w-full text-left; }
+.tbl thead th { @apply kicker text-dim py-2.5 px-3 border-b-2 border-line whitespace-nowrap; }
+.tbl tbody td { @apply py-2.5 px-3 border-b border-line/60 align-middle; }
+.tbl tbody tr:last-child td { @apply border-b-0; }
+.tbl-hover tbody tr { @apply hover:bg-sunken/60 cursor-pointer transition-colors; }
+
+/* ----- scrollbars ----- */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgb(var(--c-line)); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: rgb(var(--c-faint)); border: 2px solid transparent; background-clip: content-box; }
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ----- mobile ergonomics (ported from Woods360 production fixes) ----- */
+/* grids that only declare columns at md/lg collapse to one implicit column on
+   phones — size it to the container, never to content (prevents overflow) */
+.grid { grid-auto-columns: minmax(0, 1fr); }
+
+/* iOS Safari zooms when a focused input is <16px — never on phones */
+@media (max-width: 1023px) {
+  .input, input.input, select.input, textarea.input { font-size: 16px; }
+}
+/* fingers, not cursors */
+@media (pointer: coarse) {
+  .btn { min-height: 42px; }
+  .icon-btn { padding: 0.55rem; }
+  .input { min-height: 44px; }
+}
+/* row actions hidden behind hover on desktop must always show on touch */
+.hover-reveal { @apply transition lg:opacity-0 lg:group-hover:opacity-100; }
+.scroll-x { -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+/* bottom-sheet height cap on phones */
+.sheet-max { max-height: calc(100vh - var(--sat) - 28px); }
+@supports (height: 100dvh) { .sheet-max { max-height: calc(100dvh - var(--sat) - 28px); } }
+@media (min-width: 640px) { .sheet-max { max-height: calc(100vh - 8vh - 2rem); } }
+
+/* white brand logo: ink-dark on light theme, white on dark */
+.logo-adaptive { filter: brightness(0) opacity(0.8); }
+[data-theme='dark'] .logo-adaptive { filter: none; opacity: 0.92; }
+
+/* ----- bits ----- */
+.ring-focus { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green/80; }
+.ticker-track {
+  display: inline-block;
+  padding-left: 100%;
+  animation: ticker-scroll 28s linear infinite;
+}
+@keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+
+.screen-shadow { text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45); }
+
+/* print */
+.print-area { display: none; }
+@media print {
+  .screen-area, .no-print { display: none !important; }
+  body { background: white !important; }
+  .print-area { display: block !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}

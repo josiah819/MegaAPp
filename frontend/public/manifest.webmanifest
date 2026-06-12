@@ -1,0 +1,15 @@
+{
+  "name": "WoodsOS · Muskoka Woods",
+  "short_name": "WoodsOS",
+  "description": "Every part of camp. One place.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F3EA",
+  "theme_color": "#10333A",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
