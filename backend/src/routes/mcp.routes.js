@@ -5,6 +5,7 @@ import { effectivePerms } from '../permissions.js'
 import { ah, audit, notify, todayISO, addDays, getSetting } from '../lib.js'
 import { sha256, mcpLimiter } from '../security.js'
 import { nextTicketCode, logTicketEvent, chatWatchers } from './tickets.routes.js'
+import { resolveOAuthToken, baseUrl } from './oauth.routes.js'
 
 /* WoodsOS Model Context Protocol server — the AI-native front door.
    Streamable-HTTP transport, stateless: every POST carries one JSON-RPC
@@ -22,33 +23,48 @@ export const router = Router()
 
 const PROTOCOLS = ['2025-06-18', '2025-03-26', '2024-11-05']
 
-// ---- personal-access-token auth -------------------------------------------
+// ---- auth: personal access tokens OR OAuth bearer tokens ------------------
+// A 401 carries WWW-Authenticate pointing at the OAuth discovery doc — that's
+// what lets Claude.ai chat / Cowork start the "Add connector → sign in" flow.
+function challenge(req, res, msg) {
+  res.set('WWW-Authenticate',
+    `Bearer realm="woodsos", resource_metadata="${baseUrl(req)}/.well-known/oauth-protected-resource"`)
+  return res.status(401).json({ error: msg })
+}
+
 async function patAuth(req, res, next) {
   try {
     const header = req.headers.authorization || ''
     const raw = header.startsWith('Bearer ') ? header.slice(7).trim() : null
-    if (!raw || !raw.startsWith('wos_pat_')) {
-      return res.status(401).json({ error: 'A WoodsOS personal access token is required (Authorization: Bearer wos_pat_…)' })
+    if (!raw) return challenge(req, res, 'Authentication required — use a WoodsOS personal access token, or connect via the OAuth flow.')
+
+    // wos_pat_… → personal access token; anything else → OAuth access token.
+    let uid = null, patId = null
+    if (raw.startsWith('wos_pat_')) {
+      const pat = await one(
+        `SELECT p.id, p.user_id FROM pats p JOIN users u ON u.id = p.user_id
+         WHERE p.token_hash = $1 AND NOT p.revoked AND u.active
+           AND (p.expires_at IS NULL OR p.expires_at > now())`, [sha256(raw)])
+      if (pat) { uid = pat.user_id; patId = pat.id; q(`UPDATE pats SET last_used_at = now() WHERE id = $1`, [pat.id]).catch(() => {}) }
+    } else {
+      uid = await resolveOAuthToken(raw)
     }
-    const pat = await one(
-      `SELECT p.*, u.id AS uid FROM pats p JOIN users u ON u.id = p.user_id
-       WHERE p.token_hash = $1 AND NOT p.revoked AND u.active
-         AND (p.expires_at IS NULL OR p.expires_at > now())`, [sha256(raw)])
-    if (!pat) return res.status(401).json({ error: 'This token is invalid, revoked, or expired' })
+    if (!uid) return challenge(req, res, 'This token is invalid, revoked, or expired')
+
     const aiSetting = await getSetting('ai', {})
     if (aiSetting.enabled === false) return res.status(403).json({ error: 'AI access is switched off for this organization' })
     const flags = await getFlags()
     if (flags.get('ai') && !flags.get('ai').enabled) {
       return res.status(403).json({ error: 'The Claude & AI module is switched off' })
     }
-    const user = await one(`SELECT * FROM users WHERE id = $1`, [pat.uid])
+    const user = await one(`SELECT * FROM users WHERE id = $1 AND active`, [uid])
+    if (!user) return challenge(req, res, 'Account not found or inactive')
     user.perms = effectivePerms(user, (await getRoles()).get(user.role_key))
     if (!user.perms['ai.use']) return res.status(403).json({ error: 'Your account does not have the “Connect Claude” permission' })
     delete user.password_hash
     req.user = user
-    req.patId = pat.id
+    req.patId = patId || `u${uid}`   // rate-limit key (per token, or per user for OAuth)
     req.flags = flags
-    q(`UPDATE pats SET last_used_at = now() WHERE id = $1`, [pat.id]).catch(() => {})
     next()
   } catch (e) { next(e) }
 }

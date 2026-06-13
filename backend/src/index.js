@@ -30,6 +30,7 @@ import { router as cateringRoutes } from './routes/catering.routes.js'
 import { router as growthRoutes } from './routes/growth.routes.js'
 import { router as metricsRoutes } from './routes/metrics.routes.js'
 import { router as mcpRoutes } from './routes/mcp.routes.js'
+import { router as oauthRoutes, wellKnown as oauthWellKnown } from './routes/oauth.routes.js'
 import { router as aiRoutes } from './routes/ai.routes.js'
 import { router as motdRoutes } from './routes/motd.routes.js'
 import { router as gearRoutes, watchOverdueGear } from './routes/gear.routes.js'
@@ -51,9 +52,15 @@ app.get('/api/health', (req, res) => res.json({ ok: true, app: 'woodsos' }))
 // these for chat photos, so the route is public by design.
 app.use('/api/files', express.static(UPLOAD_DIR, { maxAge: '7d', immutable: true, index: false, dotfiles: 'deny' }))
 
-// The MCP endpoint authenticates with personal access tokens, not sessions —
-// it lives outside the JWT wall and carries its own rate limit.
+// The MCP endpoint authenticates with personal access tokens or OAuth bearers,
+// not sessions — it lives outside the JWT wall and carries its own rate limit.
 app.use('/api/mcp', mcpRoutes)
+
+// OAuth 2.1 for Claude.ai chat + Cowork connectors. Discovery metadata lives at
+// the domain root (nginx proxies /.well-known/); the endpoints do their own auth
+// and need form-encoded bodies (the /token + /authorize POSTs) as well as JSON.
+app.use(oauthWellKnown)
+app.use('/api/oauth', express.urlencoded({ extended: true }), oauthRoutes)
 
 // Public (token-gated) endpoints
 app.use('/api/public', publicLimiter, publicRoutes)

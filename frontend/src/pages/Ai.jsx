@@ -136,6 +136,20 @@ export default function Ai() {
                 </div>
               )}
             </Card>
+
+            <Card className="p-5">
+              <Kicker className="!text-dim mb-2.5">Claude.ai chat &amp; Cowork</Kicker>
+              <p className="text-[12.5px] text-dim leading-relaxed mb-3">
+                Chat and Cowork connect through a <b className="text-ink">custom connector</b> (OAuth) instead of a pasted token.
+                In Claude → Settings → Connectors → <b className="text-ink">Add custom connector</b>, give it this URL, then
+                sign in to WoodsOS and approve — it’ll act as you, within your permissions.
+              </p>
+              <div className="rounded-xl bg-sunken px-3.5 py-2.5 font-mono text-[12px] break-all select-all">{mcpUrl}</div>
+              <p className="text-[11.5px] text-faint mt-2.5">
+                Works once WoodsOS is on a public HTTPS address (a tunnel or deploy) so Claude’s cloud can reach it.
+                On your local network, Claude Code above is the way in.
+              </p>
+            </Card>
           </motion.div>
 
           <motion.div variants={rise} className="space-y-4">

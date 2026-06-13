@@ -530,6 +530,40 @@ CREATE TABLE IF NOT EXISTS pats (
 );
 CREATE INDEX IF NOT EXISTS idx_pats_user ON pats (user_id);
 
+-- ---- AI access via OAuth 2.1 (Claude.ai chat + Cowork connectors) ----
+-- Public clients self-register (Dynamic Client Registration); auth is PKCE.
+CREATE TABLE IF NOT EXISTS oauth_clients (
+  client_id TEXT PRIMARY KEY,
+  client_name TEXT DEFAULT '',
+  redirect_uris JSONB DEFAULT '[]',
+  grant_types JSONB DEFAULT '["authorization_code","refresh_token"]',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS oauth_codes (
+  code_hash TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  redirect_uri TEXT NOT NULL,
+  code_challenge TEXT DEFAULT '',
+  scope TEXT DEFAULT '',
+  resource TEXT DEFAULT '',
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS oauth_tokens (
+  id SERIAL PRIMARY KEY,
+  token_hash TEXT UNIQUE NOT NULL,
+  refresh_hash TEXT UNIQUE,
+  client_id TEXT DEFAULT '',
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  scope TEXT DEFAULT '',
+  expires_at TIMESTAMPTZ,
+  revoked BOOLEAN DEFAULT false,
+  last_used_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_oauth_tokens_user ON oauth_tokens (user_id);
+
 -- ---- round 3: ticket tags, canned replies, watchers, reads, closure approval ----
 CREATE TABLE IF NOT EXISTS tags (
   id SERIAL PRIMARY KEY,

@@ -15,12 +15,22 @@ access token.
 ## Connect (MCP)
 
 - Endpoint: POST /api/mcp (streamable HTTP, stateless JSON-RPC 2.0)
-- Auth: `Authorization: Bearer wos_pat_…` — staff mint tokens in the app under
-  **Claude & AI** (requires the `ai.use` permission)
-- Claude Code: `claude mcp add --transport http woodsos <origin>/api/mcp --header "Authorization: Bearer <token>"`
-- Tools mirror the token holder's live permissions: `tools/list` only returns
-  what they may do, write tools additionally require `ai.write`, and every
-  write is audited under their name.
+- Two auth methods, both resolving to a WoodsOS user (the token IS the person):
+  1. **Personal access token** — `Authorization: Bearer wos_pat_…`, minted in the
+     app under **Claude & AI** (`ai.use` permission). Best for Claude Code.
+  2. **OAuth 2.1** — for Claude.ai chat and Cowork "custom connectors". The MCP
+     endpoint advertises discovery via `WWW-Authenticate` on a 401; metadata at
+     `/.well-known/oauth-authorization-server` and
+     `/.well-known/oauth-protected-resource`. Public clients, PKCE S256, dynamic
+     client registration at `/api/oauth/register`, authorize at `/api/oauth/authorize`,
+     token at `/api/oauth/token`. The person signs in + approves; access scoped
+     to their permissions.
+- Claude Code: `claude mcp add --transport http woodsos <origin>/api/mcp --header "Authorization: Bearer wos_pat_…"`
+- Claude.ai chat / Cowork: add a custom connector pointing at `<origin>/api/mcp`
+  (requires a public HTTPS origin).
+- Tools mirror the holder's live permissions: `tools/list` only returns what they
+  may do, write tools additionally require `ai.write`, and every write is audited
+  under their name.
 - Start with the `whoami` tool, then `daily_brief` for today's picture.
   `export_dataset` pulls whole datasets (JSON/CSV); `get_metrics` summarizes
   any area the holder can see.

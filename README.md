@@ -50,6 +50,23 @@ claude mcp add --transport http woodsos http://localhost:8800/api/mcp \
   `ai.manage` holder), optionally expiring; org-wide master switch in Settings.
 - Machine-readable front door at [`/llms.txt`](frontend/public/llms.txt).
 
+### Claude.ai chat & Cowork (OAuth connector)
+
+Claude Code uses the pasted token above. **Claude.ai chat and Cowork** connect to
+remote MCP servers through a **custom connector** that does an OAuth handshake, so
+the MCP endpoint also implements **OAuth 2.1** (public clients, PKCE S256, dynamic
+client registration). The endpoint returns `401` with a `WWW-Authenticate` pointer;
+discovery lives at `/.well-known/oauth-authorization-server` and
+`/.well-known/oauth-protected-resource`; the flow runs through
+`/api/oauth/{register,authorize,token}`. The person signs in on a branded consent
+page and the issued access token resolves to their WoodsOS account — same
+"token is the person, scoped to permissions, every write audited" model. Add a
+custom connector pointing at `<origin>/api/mcp`, sign in, approve.
+
+This requires WoodsOS to be on a **public HTTPS origin** (a tunnel like Cloudflare
+Tunnel, or a deploy) so Anthropic's cloud can reach it. On the local network,
+Claude Code is the way in.
+
 ## Security
 
 Round three hardens the box: tiered **rate limiting** (auth, public, MCP, API,
