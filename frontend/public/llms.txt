@@ -5,7 +5,8 @@
 > chat, tasks & seasonal checklists, gear checkout, budgets & expenses, safety
 > incidents, lost & found, sign-out, shopping & town runs, people & growth
 > (kudos, pulse, 1:1s, goals, feedback, certifications), smart screens, a 3D
-> property map, and per-area metrics. Access is governed by a three-layer
+> property map, per-area metrics, and a unified layered calendar (with personal
+> Google/Outlook iCal overlays per user). Access is governed by a three-layer
 > permission system (module switches → role matrix → per-person overrides).
 
 WoodsOS is AI-native. The supported way for an AI agent to use it is the
@@ -32,12 +33,18 @@ access token.
   Team/Enterprise: an owner adds the URL under Organization settings →
   Connectors (Add → Custom → Web); members click Connect. Requires a public
   HTTPS origin.
-- Tools mirror the holder's live permissions: `tools/list` only returns what they
-  may do, write tools additionally require `ai.write`, and every write is audited
-  under their name.
-- Start with the `whoami` tool, then `daily_brief` for today's picture.
-  `export_dataset` pulls whole datasets (JSON/CSV); `get_metrics` summarizes
-  any area the holder can see.
+- 82 tools mirror the holder's live permissions: `tools/list` only returns what
+  they may do, write tools additionally require `ai.write`, and every write is
+  audited under their name. Reads and writes cover every module: bookings,
+  leads, invoices/payments, catering, room availability + housekeeping, tickets
+  (assign/tag/priority/closure flow), tasks + templates, sign-out, shopping,
+  gear, budgets (submit + approve), incidents, lost & found, people/certs/
+  kudos/goals/community/events, assets, locations, notifications, weather,
+  audit, system health.
+- Start with the `whoami` tool, then `daily_brief` for today's picture and
+  `get_calendar` for any date range (layered camp calendar + the holder's own
+  connected external calendars). `export_dataset` pulls whole datasets
+  (JSON/CSV, 18 kinds); `get_metrics` summarizes any area the holder can see.
 
 ## Humans
 

@@ -93,7 +93,9 @@ export default function App() {
 
       <Route element={<Protected><Shell /></Protected>}>
         <Route index element={<Dashboard />} />
-        <Route path="calendar" element={<Gate flag="bookings" perm="bookings.view"><CalendarPage /></Gate>} />
+        {/* The calendar is for everyone — each layer self-gates by permission,
+            and personal calendar overlays belong to every account. */}
+        <Route path="calendar" element={<CalendarPage />} />
         <Route path="bookings" element={<Gate flag="bookings" perm="bookings.view"><Bookings /></Gate>} />
         <Route path="bookings/:id" element={<Gate flag="bookings" perm="bookings.view"><BookingDetail /></Gate>} />
         <Route path="leads" element={<Gate flag="bookings" perm="bookings.leads"><Leads /></Gate>} />

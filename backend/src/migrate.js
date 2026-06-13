@@ -761,6 +761,21 @@ CREATE TABLE IF NOT EXISTS lf_items (
 );
 CREATE INDEX IF NOT EXISTS idx_lf_status ON lf_items (status);
 
+-- ---- round 4: personal external calendar overlays (Google/Outlook iCal) ----
+CREATE TABLE IF NOT EXISTS user_calendar_feeds (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  color TEXT DEFAULT '#7D5BA6',
+  enabled BOOLEAN DEFAULT true,
+  cache JSONB DEFAULT '[]',
+  fetched_at TIMESTAMPTZ,
+  fetch_status TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_ucf_user ON user_calendar_feeds (user_id);
+
 -- ---- round 3: staff certifications ----
 CREATE TABLE IF NOT EXISTS user_certs (
   id SERIAL PRIMARY KEY,

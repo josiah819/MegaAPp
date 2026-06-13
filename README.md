@@ -21,6 +21,19 @@ Redundant overlaps were consolidated rather than duplicated: four task systems b
 one Tasks module, three location databases became one registry, two accommodation
 calendars became one grid, and tickets + guest reports + maintenance share one queue.
 
+## The Calendar — every layer, one grid
+
+The Calendar page is camp in time: month / week / agenda views over **toggleable,
+permission-filtered layers** — groups & bookings (status-coloured), catering meal
+services, tasks due, facilities SLA deadlines, incidents, who's off property,
+certification expiries, camp events, and birthdays/anniversaries — with weather on
+the next few days, free-text filtering, a day drawer, and quick-create for camp
+events and tasks. Every signed-in person also gets **personal calendar overlays**:
+paste a Google Calendar "secret address" (or any Outlook/Apple/webcal `.ics` URL)
+and your own events appear alongside camp's — private to your account, refreshed
+~15 min, RRULE-aware, SSRF-guarded, capped at 6 feeds. The same aggregate powers
+the `get_calendar` MCP tool, so Claude sees the identical picture you do.
+
 **Every feature above ships behind its own permission switch** — 81 permissions across
 18 groups and 17 module kill-switches — so a kitchen lead can run the Catering sheet
 without ever seeing revenue, and a bookings coordinator can work the lead funnel
@@ -37,15 +50,25 @@ claude mcp add --transport http woodsos http://localhost:8800/api/mcp \
   --header "Authorization: Bearer wos_pat_…"
 ```
 
-- **The token is the person.** ~30 tools mirror the holder's live permissions:
+- **The token is the person.** **82 tools** mirror the holder's live permissions:
   `tools/list` only returns what they may do, write tools additionally require the
   `ai.write` permission, and module kill-switches apply.
-- Read tools: `whoami`, `daily_brief` (the morning huddle in one call), `search`,
-  bookings/tickets/tasks/gear/budgets/incidents/lost-found listings,
-  `get_metrics`, and `export_dataset` (whole datasets as JSON or CSV).
-- Write tools: open/reply/move tickets, create tasks and leads, check gear in and
-  out, log expenses, file incidents, log found items, bulk-add shopping, give kudos
-  — every write is **audited** under the person's name.
+- Read tools span every module: `whoami`, `daily_brief` (the morning huddle in one
+  call), `get_calendar` (the layered calendar incl. the holder's own feeds),
+  `search`, bookings/leads/invoices/catering, `room_availability` and the
+  `housekeeping_board`, tickets (+ thread detail, saved replies), tasks &
+  templates, gear, budgets & expenses, incidents, lost & found, people / certs /
+  kudos / goals / community, assets, locations, notifications, weather,
+  `get_metrics`, `search_audit`, `system_health`, and `export_dataset`
+  (18 datasets as JSON or CSV).
+- Write tools run the day: create/update bookings, work the lead pipeline
+  (`convert_lead`), draft invoices and record payments, put meals on the kitchen
+  sheet, open/reply/assign/tag/prioritize tickets and drive the closure-approval
+  flow, create/update tasks (checklists included) and stamp templates, sign people
+  in and out, check gear in/out, submit **and approve** expenses, file and work
+  incidents, resolve lost & found, add certifications, post to the community and
+  the camp calendar, check in on goals, log asset service, flip housekeeping
+  conditions, set the MOTD — every write is **audited** under the person's name.
 - Tokens are SHA-256-hashed at rest, shown once, revocable (self-serve or by an
   `ai.manage` holder), optionally expiring; org-wide master switch in Settings.
 - Machine-readable front door at [`/llms.txt`](frontend/public/llms.txt).

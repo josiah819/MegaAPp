@@ -19,7 +19,7 @@ export const NAV = [
     group: 'Operate',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, acc: 'acc-blue', end: true },
-      { to: '/calendar', label: 'Calendar', icon: CalendarDays, flag: 'bookings', perm: 'bookings.view', acc: 'acc-blue' },
+      { to: '/calendar', label: 'Calendar', icon: CalendarDays, acc: 'acc-blue' },
       { to: '/bookings', label: 'Bookings', icon: Tent, flag: 'bookings', perm: 'bookings.view', acc: 'acc-blue' },
       { to: '/leads', label: 'Leads', icon: Filter, flag: 'bookings', perm: 'bookings.leads', acc: 'acc-blue' },
       { to: '/billing', label: 'Billing', icon: ReceiptText, flag: 'bookings', perm: 'bookings.billing', acc: 'acc-blue' },

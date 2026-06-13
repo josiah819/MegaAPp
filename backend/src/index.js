@@ -37,6 +37,7 @@ import { router as gearRoutes, watchOverdueGear } from './routes/gear.routes.js'
 import { router as budgetsRoutes, watchBudgetBurn } from './routes/budgets.routes.js'
 import { router as safetyRoutes } from './routes/safety.routes.js'
 import { router as lostfoundRoutes } from './routes/lostfound.routes.js'
+import { router as calendarRoutes } from './routes/calendar.routes.js'
 import { UPLOAD_DIR } from './upload.js'
 
 const app = express()
@@ -73,6 +74,10 @@ app.get('/api/weather', requireAuth, ah(async (req, res) => {
   const screens = await getSetting('screens', {})
   res.json(await getWeather(screens.lat, screens.lon))
 }))
+
+// The calendar spans modules (each layer self-gates on its module flag and
+// permission) and personal feeds belong to every signed-in account — no flag.
+app.use('/api/calendar', requireAuth, apiLimiter, calendarRoutes)
 
 app.use('/api/users', requireAuth, apiLimiter, usersRoutes)
 app.use('/api/roles', requireAuth, apiLimiter, rolesRoutes)
