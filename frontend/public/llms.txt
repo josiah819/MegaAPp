@@ -26,8 +26,12 @@ access token.
      token at `/api/oauth/token`. The person signs in + approves; access scoped
      to their permissions.
 - Claude Code: `claude mcp add --transport http woodsos <origin>/api/mcp --header "Authorization: Bearer wos_pat_…"`
-- Claude.ai chat / Cowork: add a custom connector pointing at `<origin>/api/mcp`
-  (requires a public HTTPS origin).
+- Claude.ai chat / Desktop / Cowork: in Claude, Customize → Connectors → "+" →
+  Add custom connector → paste `<origin>/api/mcp` → Add, then sign in + approve.
+  Enable it per conversation via the "+" menu (lower left) → Connectors.
+  Team/Enterprise: an owner adds the URL under Organization settings →
+  Connectors (Add → Custom → Web); members click Connect. Requires a public
+  HTTPS origin.
 - Tools mirror the holder's live permissions: `tools/list` only returns what they
   may do, write tools additionally require `ai.write`, and every write is audited
   under their name.

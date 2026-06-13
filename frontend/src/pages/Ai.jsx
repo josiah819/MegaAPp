@@ -140,13 +140,19 @@ export default function Ai() {
             <Card className="p-5">
               <Kicker className="!text-dim mb-2.5">Claude.ai chat &amp; Cowork</Kicker>
               <p className="text-[12.5px] text-dim leading-relaxed mb-3">
-                Chat and Cowork connect through a <b className="text-ink">custom connector</b> (OAuth) instead of a pasted token.
-                In Claude → Settings → Connectors → <b className="text-ink">Add custom connector</b>, give it this URL, then
-                sign in to WoodsOS and approve — it’ll act as you, within your permissions.
+                Chat, Desktop and Cowork connect through a <b className="text-ink">custom connector</b> (OAuth) instead of a
+                pasted token. In Claude, open <b className="text-ink">Customize → Connectors</b>, hit{' '}
+                <b className="text-ink">+ → Add custom connector</b>, and give it this URL:
               </p>
               <div className="rounded-xl bg-sunken px-3.5 py-2.5 font-mono text-[12px] break-all select-all">{mcpUrl}</div>
+              <p className="text-[12.5px] text-dim leading-relaxed mt-3">
+                Claude walks you through signing in to WoodsOS and approving access — it then acts as you, within your
+                permissions. In a conversation, open the <b className="text-ink">+ menu (lower left) → Connectors</b> and
+                switch WoodsOS on. On Team/Enterprise an owner adds the same URL under{' '}
+                <b className="text-ink">Organization settings → Connectors</b>, then everyone connects with one click.
+              </p>
               <p className="text-[11.5px] text-faint mt-2.5">
-                Works once WoodsOS is on a public HTTPS address (a tunnel or deploy) so Claude’s cloud can reach it.
+                Needs WoodsOS on a public HTTPS address (a tunnel or deploy) so Claude’s cloud can reach it.
                 On your local network, Claude Code above is the way in.
               </p>
             </Card>

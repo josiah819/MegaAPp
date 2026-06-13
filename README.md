@@ -60,8 +60,13 @@ discovery lives at `/.well-known/oauth-authorization-server` and
 `/.well-known/oauth-protected-resource`; the flow runs through
 `/api/oauth/{register,authorize,token}`. The person signs in on a branded consent
 page and the issued access token resolves to their WoodsOS account — same
-"token is the person, scoped to permissions, every write audited" model. Add a
-custom connector pointing at `<origin>/api/mcp`, sign in, approve.
+"token is the person, scoped to permissions, every write audited" model.
+
+To connect: in Claude, open **Customize → Connectors**, click **+ → Add custom
+connector**, paste `<origin>/api/mcp`, hit **Add**, then sign in and approve.
+Enable it in a conversation from the **+ menu (lower left) → Connectors**. On
+Team/Enterprise plans an owner adds the same URL under **Organization settings
+→ Connectors** (Add → Custom → Web) and members just click **Connect**.
 
 This requires WoodsOS to be on a **public HTTPS origin** (a tunnel like Cloudflare
 Tunnel, or a deploy) so Anthropic's cloud can reach it. On the local network,
