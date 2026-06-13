@@ -3,3 +3,7 @@ dist/
 .env
 *.log
 .DS_Store
+
+# map3d pipeline: keep the scripts + runtime assets, exclude the bulky raw/derived data
+tools/map3d/data/
+tools/map3d/index_procedural_backup.html

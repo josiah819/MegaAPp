@@ -1,0 +1,12 @@
+{
+  "n": 501,
+  "half_m": 1500.0,
+  "spacing_m": 6.0,
+  "m_per_unit": 2.0,
+  "lake_datum_m": 225.3,
+  "ground_min_m": 222.8,
+  "ground_max_m": 308.7019371184456,
+  "canopy_max_m": 34.30773460140614,
+  "water_frac": 0.18487575746710172,
+  "note": "row0=NORTH(+z south), col0=WEST(-x). world: x=east/2, z=south/2, y=(elev-datum)/2"
+}
